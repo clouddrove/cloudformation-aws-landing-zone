@@ -1,0 +1,26 @@
+version: 2
+jobs:
+  check_for_updates:
+    docker:
+      - image: alpine:latest
+    steps:
+      - checkout # check out the code in the project directory
+      - run: apk add bash curl
+      - run: bash -c 'diff aws-landing-zone-initiation.template <(curl -s https://s3.amazonaws.com/solutions-reference/aws-landing-zone/latest/aws-landing-zone-initiation.template)'
+
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - check_for_updates
+
+  weekdays:
+    jobs:
+      - check_for_updates
+    triggers:
+      - schedule:
+          cron: '0 15 * * 1-5'
+          filters:
+            branches:
+              only:
+                - master
