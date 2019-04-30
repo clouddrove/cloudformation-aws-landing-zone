@@ -6,7 +6,7 @@ jobs:
     steps:
       - checkout # check out the code in the project directory
       - run: apk add bash curl
-      - run: bash -c 'diff aws-landing-zone-initiation.template <(curl -s https://s3.amazonaws.com/solutions-reference/aws-landing-zone/latest/aws-landing-zone-initiation.template)'
+      - run: bash -c 'diff aws-landing-zone-initiation.yaml <(curl -s https://s3.amazonaws.com/solutions-reference/aws-landing-zone/latest/aws-landing-zone-initiation.template)'
 
 workflows:
   version: 2
