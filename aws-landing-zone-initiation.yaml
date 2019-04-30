@@ -1,3 +1,16 @@
+# Copyright 2012-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Amazon Software License (the "License").
+# You may not use this file except in compliance with the License.
+# A copy of the License is located at
+#
+# http://aws.amazon.com/asl/
+#
+# or in the "license" file accompanying this file. This file is distributed
+# on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# express or implied. See the License for the specific language governing
+# permissions and limitations under the License.
+
 AWSTemplateFormatVersion: '2010-09-09'
 Description: (SO0044) - AWS Landing Zone Initiation Template
 
@@ -80,7 +93,7 @@ Parameters:
     Default: 'Yes'
     Type: String
 
-  # Shared Services VPC
+# Shared Services VPC
   VPCOptions:
     Type: String
     Default: Shared-Services-Network-3-AZs
@@ -95,81 +108,81 @@ Parameters:
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
     Description: CIDR block for the Shared Services VPC
 
-  # AWS Config
+# AWS Config
   EnableConfigAllRegions:
     Type: String
     Description: "Do you want to enable AWS Config Service and Rules in all the regions?"
     Default: 'Yes'
     AllowedValues:
-      - 'Yes'
-      - 'No'
+    - 'Yes'
+    - 'No'
 
-  # AWS Config Rules
+# AWS Config Rules
   EnableEncryptedVolumesRule:
     Type: String
     Description: "Enables the AWS managed encrypted-volumes config rule."
     Default: 'Yes'
     AllowedValues:
-      - 'Yes'
-      - 'No'
+    - 'Yes'
+    - 'No'
   EnableRdsEncryptionRule:
     Type: String
     Description: "Enables the AWS managed rds-storage-encrypted config rule."
     Default: 'Yes'
     AllowedValues:
-      - 'Yes'
-      - 'No'
+    - 'Yes'
+    - 'No'
   EnableS3PublicReadRule:
     Type: String
     Description: "Enables the AWS managed s3-bucket-public-read-prohibited config rule."
     Default: 'Yes'
     AllowedValues:
-      - 'Yes'
-      - 'No'
+    - 'Yes'
+    - 'No'
   EnableS3PublicWriteRule:
     Type: String
     Description: "Enables the AWS managed s3-bucket-public-write-prohibited config rule."
     Default: 'Yes'
     AllowedValues:
-      - 'Yes'
-      - 'No'
+    - 'Yes'
+    - 'No'
   EnableS3ServerSideEncryptionRule:
     Type: String
     Description: "Enables the AWS managed s3-bucket-server-side-encryption-enabled config rule."
-    Default: 'No'
+    Default: 'Yes'
     AllowedValues:
-      - 'Yes'
-      - 'No'
+    - 'Yes'
+    - 'No'
   EnableRootMfaRule:
     Type: String
     Description: "Enables the AWS managed root-account-mfa-enabled config rule."
     Default: 'Yes'
     AllowedValues:
-      - 'Yes'
-      - 'No'
+    - 'Yes'
+    - 'No'
   EnableIamPasswordPolicyRule:
     Type: String
     Description: "Enables the AWS managed iam-password-policy config rule."
     Default: 'Yes'
     AllowedValues:
-      - 'Yes'
-      - 'No'
+    - 'Yes'
+    - 'No'
   EnableRestrictedCommonPortsRule:
     Type: String
     Description: "Enables the AWS managed restricted-common-ports config rule."
     Default: 'Yes'
     AllowedValues:
-      - 'Yes'
-      - 'No'
+    - 'Yes'
+    - 'No'
   EnableRestrictedSshRule:
     Type: String
     Description: "Enables the AWS managed restricted-ssh config rule."
     Default: 'Yes'
     AllowedValues:
-      - 'Yes'
-      - 'No'
+    - 'Yes'
+    - 'No'
 
-  # Flow logs retention in days
+# Flow logs retention in days
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain VPC flow logs in each account.'
     Type: Number
@@ -180,49 +193,49 @@ Parameters:
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
-      - Label:
-          default: Landing Zone Core Account Configuration
-        Parameters:
-          - SharedServicesAccountEmail
-          - LoggingAccountEmail
-          - SecurityAccountEmail
-          - CoreOUName
-          - NonCoreOUNames
-          - SecurityAlertEmail
-          - LockStackSetsExecutionRole
-          - SubscribeAllChangeEventsEmailToTopic
-          - AllChangeEventsEmail
-      - Label:
-          default: Landing Zone Pipeline Configuration
-        Parameters:
-          - PipelineApprovalStage
-          - PipelineApprovalEmail
-          - BuildLandingZone
-      - Label:
-          default: Shared Services VPC Configuration
-        Parameters:
-          - VPCOptions
-          - VPCCidr
-      - Label:
-          default: VPC Flow Logs Retention Policy
-        Parameters:
-          - LogsRetentionInDays
-      - Label:
-          default: AWS Config Service Configuration
-        Parameters:
-          - EnableConfigAllRegions
-      - Label:
-          default: AWS Config Rules
-        Parameters:
-          - EnableEncryptedVolumesRule
-          - EnableRdsEncryptionRule
-          - EnableS3PublicReadRule
-          - EnableS3PublicWriteRule
-          - EnableS3ServerSideEncryptionRule
-          - EnableRootMfaRule
-          - EnableIamPasswordPolicyRule
-          - EnableRestrictedCommonPortsRule
-          - EnableRestrictedSshRule
+    - Label:
+        default: Landing Zone Core Account Configuration
+      Parameters:
+      - SharedServicesAccountEmail
+      - LoggingAccountEmail
+      - SecurityAccountEmail
+      - CoreOUName
+      - NonCoreOUNames
+      - SecurityAlertEmail
+      - LockStackSetsExecutionRole
+      - SubscribeAllChangeEventsEmailToTopic
+      - AllChangeEventsEmail
+    - Label:
+        default: Landing Zone Pipeline Configuration
+      Parameters:
+      - PipelineApprovalStage
+      - PipelineApprovalEmail
+      - BuildLandingZone
+    - Label:
+        default: Shared Services VPC Configuration
+      Parameters:
+        - VPCOptions
+        - VPCCidr
+    - Label:
+        default: VPC Flow Logs Retention Policy
+      Parameters:
+        - LogsRetentionInDays
+    - Label:
+        default: AWS Config Service Configuration
+      Parameters:
+      - EnableConfigAllRegions
+    - Label:
+        default: AWS Config Rules
+      Parameters:
+        - EnableEncryptedVolumesRule
+        - EnableRdsEncryptionRule
+        - EnableS3PublicReadRule
+        - EnableS3PublicWriteRule
+        - EnableS3ServerSideEncryptionRule
+        - EnableRootMfaRule
+        - EnableIamPasswordPolicyRule
+        - EnableRestrictedCommonPortsRule
+        - EnableRestrictedSshRule
 
     ParameterLabels:
       SharedServicesAccountEmail:
@@ -292,7 +305,7 @@ Mappings:
     SourceBucketName:
       Name: solutions-reference
     SourceKeyName:
-      Name: aws-landing-zone/v2.0/aws-landing-zone-configuration.zip
+      Name: aws-landing-zone/v2.0.3/aws-landing-zone-configuration.zip
     LandingZonePipelineS3TriggerKey:
       Name: aws-landing-zone-configuration.zip
     LandingZonePipelineS3NonTriggerKey:
@@ -304,11 +317,11 @@ Mappings:
     Shared-Services-Network-2-AZs:
       AvailabilityZones: 2
       PublicSubnets:
-        - PublicSubnet1CIDR
-        - PublicSubnet2CIDR
+          - PublicSubnet1CIDR
+          - PublicSubnet2CIDR
       PrivateSubnets:
-        - PrivateSubnet1ACIDR
-        - PrivateSubnet2ACIDR
+          - PrivateSubnet1ACIDR
+          - PrivateSubnet2ACIDR
       CreateAdditionalPrivateSubnets: 'false'
       CreatePrivateSubnets: 'true'
       CreatePublicSubnets: 'true'
@@ -316,13 +329,13 @@ Mappings:
     Shared-Services-Network-3-AZs:
       AvailabilityZones: 3
       PublicSubnets:
-        - PublicSubnet1CIDR
-        - PublicSubnet2CIDR
-        - PublicSubnet3CIDR
+          - PublicSubnet1CIDR
+          - PublicSubnet2CIDR
+          - PublicSubnet3CIDR
       PrivateSubnets:
-        - PrivateSubnet1ACIDR
-        - PrivateSubnet2ACIDR
-        - PrivateSubnet3ACIDR
+          - PrivateSubnet1ACIDR
+          - PrivateSubnet2ACIDR
+          - PrivateSubnet3ACIDR
       CreateAdditionalPrivateSubnets: 'false'
       CreatePrivateSubnets: 'true'
       CreatePublicSubnets: 'true'
@@ -514,8 +527,8 @@ Resources:
     Condition: IsPipelineApprovalStageCondition
     Properties:
       Subscription:
-        - Endpoint: !Ref PipelineApprovalEmail
-          Protocol: email
+      - Endpoint: !Ref PipelineApprovalEmail
+        Protocol: email
 
   LandingZonePipelineS3Bucket:
     Type: AWS::S3::Bucket
@@ -570,11 +583,11 @@ Resources:
                   - !Sub "arn:aws:s3:::${LandingZonePipelineS3Bucket}/*"
               - Effect: Allow
                 Action:
-                  - ssm:PutParameter
-                  - ssm:GetParameter
-                  - ssm:DeleteParameter
-                  - ssm:GetParametersByPath
-                  - ssm:DescribeParameters
+                - ssm:PutParameter
+                - ssm:GetParameter
+                - ssm:DeleteParameter
+                - ssm:GetParametersByPath
+                - ssm:DescribeParameters
                 Resource: '*'
               - Effect: "Allow"
                 Action:
@@ -633,18 +646,18 @@ Resources:
               RunOrder: 1
         - Name: Build
           Actions:
-            - Name: CodeBuild
-              InputArtifacts:
-                - Name: SourceApp
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: 1
-                Provider: CodeBuild
-              OutputArtifacts:
-                - Name: BuiltApp
-              Configuration:
-                ProjectName: !Ref LandingZoneCodeBuild
+              - Name: CodeBuild
+                InputArtifacts:
+                  - Name: SourceApp
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Version: 1
+                  Provider: CodeBuild
+                OutputArtifacts:
+                  - Name: BuiltApp
+                Configuration:
+                  ProjectName: !Ref LandingZoneCodeBuild
         - !If
           - IsPipelineApprovalStageCondition
           - Name: Approval
@@ -731,16 +744,16 @@ Resources:
               RunOrder: 1
         - Name: LaunchAVM
           Actions:
-            - Name: CodeBuild
-              InputArtifacts:
-                - Name: BuiltApp
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: 1
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref LaunchAVMCodeBuild
+              - Name: CodeBuild
+                InputArtifacts:
+                  - Name: BuiltApp
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Version: 1
+                  Provider: CodeBuild
+                Configuration:
+                  ProjectName: !Ref LaunchAVMCodeBuild
 
   LandingZoneCodeBuildRole:
     Type: "AWS::IAM::Role"
@@ -791,25 +804,25 @@ Resources:
                   - ssm:DescribeParameters
                 Resource: '*'
   LandingZoneCodeBuild:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: AWS-Landing-Zone-CodeBuild
-      ServiceRole: !GetAtt LandingZoneCodeBuildRole.Arn
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: "version: 0.2\nphases:\n  install:\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-add-repository ppa:brightbox/ruby-ng\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev ruby2.2 rsync -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade jinja2\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip install --upgrade pykwalify\n      - pip install cfn_flip\n      - pip freeze\n      - gem install cfn-nag\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Validation scripts'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.0/aws-landing-zone-validation.zip $current\n      - unzip -o $current/aws-landing-zone-validation.zip -d $current\n      - cp bin/lz_scripts/* .\n  build:\n    commands:\n      - echo 'Starting build `date` in `pwd`'\n      - echo 'bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY'\n      - bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY\n      - echo 'Executing validation tests'\n      - echo 'bash $current/validation/run-validation.sh $ARTIFACT_BUCKET'\n      - bash $current/validation/run-validation.sh $ARTIFACT_BUCKET\n      - echo 'Installing validation tests completed `date`'\n      - echo 'Source Dist completed `date`'\n  post_build:\n    commands:\n      - echo 'Starting post build `date` in `pwd`'\n      - echo 'build completed on `date`'\n      - echo 'Printing Merge Report'\n      - cat merge_report.txt\nartifacts:\n  files:\n      - '**/*'"
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: "aws/codebuild/python:3.6.5"
-        Type: LINUX_CONTAINER
-        EnvironmentVariables:
-          - Name: ARTIFACT_BUCKET
-            Value: !Ref LandingZonePipelineArtifactS3Bucket
-          - Name: LAMBDA_ARN_SSM_PS_KEY
-            Value: !FindInMap [SSMParameterNames, LandingZoneLambdaParameterName, Name]
-      Artifacts:
-        Name: !Sub ${LandingZonePipelineArtifactS3Bucket}-Built
-        Type: CODEPIPELINE
+      Type: AWS::CodeBuild::Project
+      Properties:
+          Name: AWS-Landing-Zone-CodeBuild
+          ServiceRole: !GetAtt LandingZoneCodeBuildRole.Arn
+          Source:
+              Type: CODEPIPELINE
+              BuildSpec: "version: 0.2\nphases:\n  install:\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-add-repository ppa:brightbox/ruby-ng\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev ruby2.5 rsync -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade jinja2\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip install --upgrade pykwalify\n      - pip install cfn_flip\n      - pip freeze\n      - ruby -v\n      - gem -v\n      - gem install cfn-nag -v 0.3.64\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Validation scripts'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.0.3/aws-landing-zone-validation.zip $current\n      - unzip -o $current/aws-landing-zone-validation.zip -d $current\n      - cp bin/lz_scripts/* .\n  build:\n    commands:\n      - echo 'Starting build `date` in `pwd`'\n      - echo 'bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY'\n      - bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY\n      - echo 'Executing validation tests'\n      - echo 'bash $current/validation/run-validation.sh $ARTIFACT_BUCKET'\n      - bash $current/validation/run-validation.sh $ARTIFACT_BUCKET\n      - echo 'Installing validation tests completed `date`'\n      - echo 'Source Dist completed `date`'\n  post_build:\n    commands:\n      - echo 'Starting post build `date` in `pwd`'\n      - echo 'build completed on `date`'\n      - echo 'Printing Merge Report'\n      - cat merge_report.txt\nartifacts:\n  files:\n      - '**/*'"
+          Environment:
+              ComputeType: BUILD_GENERAL1_SMALL
+              Image: "aws/codebuild/python:3.6.5"
+              Type: LINUX_CONTAINER
+              EnvironmentVariables:
+                  - Name: ARTIFACT_BUCKET
+                    Value: !Ref LandingZonePipelineArtifactS3Bucket
+                  - Name: LAMBDA_ARN_SSM_PS_KEY
+                    Value: !FindInMap [SSMParameterNames, LandingZoneLambdaParameterName, Name]
+          Artifacts:
+              Name: !Sub ${LandingZonePipelineArtifactS3Bucket}-Built
+              Type: CODEPIPELINE
 
   LaunchAVMCodeBuildRole:
     Type: "AWS::IAM::Role"
@@ -865,31 +878,32 @@ Resources:
                   - organizations:ListOrganizationalUnitsForParent
                   - organizations:ListAccountsForParent
                   - organizations:DescribeAccount
+                  - organizations:MoveAccount
                 Resource: '*'
 
   LaunchAVMCodeBuild:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: AWS-Landing-Zone-LaunchAVM-CodeBuild
-      ServiceRole: !GetAtt LaunchAVMCodeBuildRole.Arn
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: "version: 0.2\nphases:\n  install:\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip freeze\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Launch AVM Code'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.0/aws-landing-zone-launch-avm.zip $current\n      - unzip -o $current/aws-landing-zone-launch-avm.zip -d $current\n  build:\n    commands:\n      - echo 'Starting Launch AVM `date` in `pwd`'\n      - echo 'python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm'\n      - python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm\n      - echo 'Completed Launch AVM `date` in `pwd`'\nartifacts:\n  files:\n      - '**/*'"
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: "aws/codebuild/python:3.6.5"
-        Type: LINUX_CONTAINER
-        EnvironmentVariables:
-          - Name: sm_arn_launch_avm
-            Value: !Ref LaunchAVMStateMachine
-          - Name: log_level
-            Value: !FindInMap [LambdaFunction, Logging, Level]
-          - Name: wait_time
-            Value: 300
-      Artifacts:
-        Name: !Sub ${LandingZonePipelineArtifactS3Bucket}-Built
-        Type: CODEPIPELINE
-      TimeoutInMinutes: 480
+      Type: AWS::CodeBuild::Project
+      Properties:
+          Name: AWS-Landing-Zone-LaunchAVM-CodeBuild
+          ServiceRole: !GetAtt LaunchAVMCodeBuildRole.Arn
+          Source:
+              Type: CODEPIPELINE
+              BuildSpec: "version: 0.2\nphases:\n  install:\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip freeze\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Launch AVM Code'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.0.3/aws-landing-zone-launch-avm.zip $current\n      - unzip -o $current/aws-landing-zone-launch-avm.zip -d $current\n  build:\n    commands:\n      - echo 'Starting Launch AVM `date` in `pwd`'\n      - echo 'python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm'\n      - python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm\n      - echo 'Completed Launch AVM `date` in `pwd`'\nartifacts:\n  files:\n      - '**/*'"
+          Environment:
+              ComputeType: BUILD_GENERAL1_SMALL
+              Image: "aws/codebuild/python:3.6.5"
+              Type: LINUX_CONTAINER
+              EnvironmentVariables:
+                  - Name: sm_arn_launch_avm
+                    Value: !Ref LaunchAVMStateMachine
+                  - Name: log_level
+                    Value: !FindInMap [LambdaFunction, Logging, Level]
+                  - Name: wait_time
+                    Value: 300
+          Artifacts:
+              Name: !Sub ${LandingZonePipelineArtifactS3Bucket}-Built
+              Type: CODEPIPELINE
+          TimeoutInMinutes: 480
 
   LandingZoneDeploymentLambdaRole:
     Type: AWS::IAM::Role
@@ -962,7 +976,7 @@ Resources:
           kms_key_alias_name: !FindInMap [KMS, Alias, Name]
       Code:
         S3Bucket: !Sub solutions-${AWS::Region}
-        S3Key: aws-landing-zone/v2.0/aws-landing-zone-config-deployer.zip
+        S3Key: aws-landing-zone/v2.0.3/aws-landing-zone-config-deployer.zip
       FunctionName: LandingZoneDeploymentLambda
       Description: AWS Landing Zone Deployment Lambda
       Handler: config_deployer.lambda_handler
@@ -971,7 +985,7 @@ Resources:
       Runtime: python3.6
       Timeout: '300'
       TracingConfig:
-        Mode: Active
+          Mode: Active
   LandingZoneConfigDeployer:
     Type: Custom::ConfigDeployer
     Properties:
@@ -992,7 +1006,8 @@ Resources:
           Version: "2012-10-17"
           Id: "key-alz-1"
           Statement:
-            - Sid: "Allow administration of the key"
+            -
+              Sid: "Allow administration of the key"
               Effect: "Allow"
               Principal:
                 AWS: !Join ["", ["arn:aws:iam::", Ref: "AWS::AccountId", ":root" ]]
@@ -1010,16 +1025,17 @@ Resources:
                 - "kms:ScheduleKeyDeletion"
                 - "kms:CancelKeyDeletion"
               Resource: "*"
-            - Sid: "Allow use of the key"
+            -
+              Sid: "Allow use of the key"
               Effect: "Allow"
               Principal:
                 AWS:
-                  - Fn::Sub: ${LandingZoneLambdaRole.Arn}
-                  - Fn::Sub: ${StateMachineLambdaRole.Arn}
-                  - Fn::Sub: ${LandingZoneDeploymentLambdaRole.Arn}
-                  - Fn::Sub: ${StateMachineTriggerLambdaRole.Arn}
-                  - Fn::Sub: ${LandingZoneCodePipelineRole.Arn}
-                  - Fn::Sub: ${HandshakeSMLambdaRole.Arn}
+                    - Fn::Sub: ${LandingZoneLambdaRole.Arn}
+                    - Fn::Sub: ${StateMachineLambdaRole.Arn}
+                    - Fn::Sub: ${LandingZoneDeploymentLambdaRole.Arn}
+                    - Fn::Sub: ${StateMachineTriggerLambdaRole.Arn}
+                    - Fn::Sub: ${LandingZoneCodePipelineRole.Arn}
+                    - Fn::Sub: ${HandshakeSMLambdaRole.Arn}
               Action:
                 - "kms:Encrypt"
                 - "kms:Decrypt"
@@ -1103,7 +1119,7 @@ Resources:
                   - logs:PutLogEvents
                 Resource:
                   - !Join ['', ['arn:aws:logs:', !Ref 'AWS::Region', ':', !Ref 'AWS::AccountId',
-                                ':log-group:/aws/lambda/*']]
+                      ':log-group:/aws/lambda/*']]
               - Effect: Allow
                 Action:
                   - ssm:PutParameter
@@ -1181,6 +1197,10 @@ Resources:
                   - ec2:DescribeAvailabilityZones
                   - ec2:DescribeRegions
                 Resource: '*'
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStackSet
+                Resource: '*'
   StateMachineTriggerLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -1201,7 +1221,7 @@ Resources:
           lambda_arn_param_name: !FindInMap [SSMParameterNames, LandingZoneLambdaParameterName, Name]
       Code:
         S3Bucket: !Sub solutions-${AWS::Region}
-        S3Key: aws-landing-zone/v2.0/aws-landing-zone-state-machine-trigger.zip
+        S3Key: aws-landing-zone/v2.0.3/aws-landing-zone-state-machine-trigger.zip
       FunctionName: LandingZoneStateMachineTriggerLambda
       Description: AWS Landing Zone State Machine Trigger
       Handler: state_machine_trigger.lambda_handler
@@ -1210,7 +1230,7 @@ Resources:
       Runtime: python3.6
       Timeout: '900'
       TracingConfig:
-        Mode: Active
+          Mode: Active
   StateMachineLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -1235,7 +1255,7 @@ Resources:
                   - logs:PutLogEvents
                 Resource:
                   - !Join ['', ['arn:aws:logs:', !Ref 'AWS::Region', ':', !Ref 'AWS::AccountId',
-                                ':log-group:/aws/lambda/*']]
+                      ':log-group:/aws/lambda/*']]
               - Effect: Allow
                 Action:
                   - iam:GetRole
@@ -1299,6 +1319,7 @@ Resources:
                   - servicecatalog:ListPrincipalsForPortfolio
                   - servicecatalog:ListPortfolios
                   - servicecatalog:DescribeRecord
+                  - servicecatalog:DescribeProvisionedProduct
                   - servicecatalog:SearchProvisionedProducts
                   - servicecatalog:UpdateProvisionedProduct
                   - servicecatalog:TerminateProvisionedProduct
@@ -1422,7 +1443,7 @@ Resources:
           unlock_role_arns: !Sub arn:aws:iam::${AWS::AccountId}:root
       Code:
         S3Bucket: !Sub solutions-${AWS::Region}
-        S3Key: aws-landing-zone/v2.0/aws-landing-zone-state-machine.zip
+        S3Key: aws-landing-zone/v2.0.3/aws-landing-zone-state-machine.zip
       FunctionName: LandingZoneStateMachineLambda
       Description: AWS Landing Zone State Machine Handler
       Handler: state_machine_router.lambda_handler
@@ -1431,7 +1452,7 @@ Resources:
       Runtime: python3.6
       Timeout: '300'
       TracingConfig:
-        Mode: Active
+          Mode: Active
 
   HandshakeSMLambdaRole:
     Type: AWS::IAM::Role
@@ -1457,7 +1478,7 @@ Resources:
                   - logs:PutLogEvents
                 Resource:
                   - !Join ['', ['arn:aws:logs:', !Ref 'AWS::Region', ':', !Ref 'AWS::AccountId',
-                                ':log-group:/aws/lambda/*']]
+                      ':log-group:/aws/lambda/*']]
               - Effect: Allow
                 Action:
                   - xray:PutTraceSegments
@@ -1528,7 +1549,7 @@ Resources:
           wait_time: 15
       Code:
         S3Bucket: !Sub solutions-${AWS::Region}
-        S3Key: aws-landing-zone/v2.0/aws-landing-zone-handshake-state-machine.zip
+        S3Key: aws-landing-zone/v2.0.3/aws-landing-zone-handshake-state-machine.zip
       Description: AWS Lambda-backed Custom Resources for Handshake Mechanism
       FunctionName: LandingZoneHandshakeSMLambda
       Handler: handshake_sm_router.lambda_handler
@@ -1613,7 +1634,7 @@ Resources:
                   - logs:PutLogEvents
                 Resource:
                   - !Join ['', ['arn:aws:logs:', !Ref 'AWS::Region', ':', !Ref 'AWS::AccountId',
-                                ':log-group:/aws/lambda/*']]
+                      ':log-group:/aws/lambda/*']]
               - Effect: Allow
                 Action:
                   - xray:PutTraceSegments
@@ -1693,7 +1714,7 @@ Resources:
           sm_arn_handshake_sm: !Ref HandshakeStateMachine
       Code:
         S3Bucket: !Sub solutions-${AWS::Region}
-        S3Key: aws-landing-zone/v2.0/aws-landing-zone-avm.zip
+        S3Key: aws-landing-zone/v2.0.3/aws-landing-zone-avm-cr.zip
       Description: AWS Lambda-backed Custom Resources for AVM
       FunctionName: LandingZone
       Handler: lambda_custom_resource.lambda_handler
@@ -1702,7 +1723,7 @@ Resources:
       Runtime: python3.6
       Timeout: '300'
       TracingConfig:
-        Mode: Active
+          Mode: Active
 
   VPCCalculator:
     Type: Custom::VPCCalculator
@@ -1747,7 +1768,8 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
+          -
+            Effect: "Allow"
             Principal:
               Service:
                 - !Sub "states.${AWS::Region}.amazonaws.com"
@@ -1784,7 +1806,7 @@ Resources:
       Description: Install the centralized log aggregation and monitoring solution
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.0/add-on/aws-centralized-logging-soution.template
+            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.0.3/add-on/aws-centralized-logging-soution.template
           Name: v1
 
   AddLandingZoneAddOnProduct1ToPortfolio:
@@ -1817,7 +1839,7 @@ Resources:
       Description: This AWS Landing Zone add-on will deploy Directory Connector for AWS SSO peered with AWS Managed Active Directory and a Remote Desktop Gateway in the shared service account. Use this add-on to provide an AWS managed AD infrastructure for controlling user access to AWS and your EC2 instances.
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.0/add-on/aws-ad-with-rdgw-ad-connector.template
+            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.0.3/add-on/aws-ad-with-rdgw-ad-connector.template
           Name: v1
 
   AddLandingZoneAddOnProduct2ToPortfolio:
@@ -3160,7 +3182,7 @@ Resources:
                   {
                     "Variable": "$.NextToken",
                     "StringEquals": "Complete",
-                    "Next": "Create Instance?"
+                    "Next": "Create or Update Instance?"
                   }
                 ],
                 "Default": "Check Instance Wait"
@@ -3170,7 +3192,7 @@ Resources:
                 "Seconds": 5,
                 "Next": "Check Instance"
               },
-              "Create Instance?": {
+              "Create or Update Instance?": {
                 "Type": "Choice",
                 "Choices": [
                   {
@@ -3179,12 +3201,149 @@ Resources:
                     "Next": "Deploy Stack Instance?"
                   },
                   {
-                    "Variable": "$.CreateInstance",
-                    "StringEquals": "no",
+                    "And": [
+                      {
+                        "Variable": "$.CreateInstance",
+                        "StringEquals": "no"
+                      },
+                      {
+                        "Variable": "$.RequestType",
+                        "StringEquals": "Create"
+                      }
+                    ],
                     "Next": "Export Stack Output Pass"
+                  },
+                  {
+                    "And": [
+                      {
+                        "Variable": "$.CreateInstance",
+                        "StringEquals": "no"
+                      },
+                      {
+                        "Variable": "$.RequestType",
+                        "StringEquals": "Update"
+                      }
+                    ],
+                    "Next": "Update Stack Instance?"
                   }
                 ],
                 "Default": "Export Stack Output Pass"
+              },
+              "Update Stack Instance?": {
+                "Type": "Choice",
+                "Choices": [
+                  {
+                    "And": [
+                      {
+                        "Variable": "$.ResourceProperties.AccountList",
+                        "StringLessThan": "1"
+                      },
+                      {
+                        "Variable": "$.ResourceProperties.RegionList",
+                        "StringLessThan": "1"
+                      }
+                    ],
+                    "Next": "StackSet Updated"
+                  },
+                  {
+                    "Variable": "$.OverrideParametersExist",
+                    "StringEquals": "no",
+                    "Next": "Override parameters do not exist in the event"
+                  }
+                ],
+                "Default": "Update Stack Instance Pass"
+              },
+              "StackSet Updated": {
+                "Type": "Pass",
+                "Next": "Export Stack Output Pass"
+              },
+              "Override parameters do not exist in the event": {
+                "Type": "Pass",
+                "Next": "Export Stack Output Pass"
+              },
+              "Update Stack Instance Pass": {
+                "Type": "Pass",
+                "Result": {
+                  "ClassName": "CloudFormation",
+                  "FunctionName": "update_stack_instances"
+                },
+                "ResultPath": "$.params",
+                "Next": "Update Stack Instance"
+              },
+              "Update Stack Instance": {
+                "Type": "Task",
+                "Resource": "${StateMachineLambda.Arn}",
+                "TimeoutSeconds": 300,
+                "HeartbeatSeconds": 60,
+                "InputPath": "$",
+                "Next": "Update Instance Operation ID?"
+              },
+              "Update Instance Operation ID?": {
+                "Type": "Choice",
+                "Choices": [
+                  {
+                    "Variable": "$.OperationId",
+                    "StringEquals": "OperationInProgressException",
+                    "Next": "Waiting on Update... OperationInProgress"
+                  }
+                ],
+                "Default": "Update Instance Task Running"
+              },
+              "Waiting on Update... OperationInProgress": {
+                "Type": "Wait",
+                "Seconds": 30,
+                "Next": "Update Stack Instance"
+              },
+              "Update Instance Task Running": {
+                "Type": "Wait",
+                "Seconds": 10,
+                "Next": "Update Instance Task Pass"
+              },
+              "Update Instance Task Pass": {
+                "Type": "Pass",
+                "Result": {
+                  "ClassName": "CloudFormation",
+                  "FunctionName": "describe_stack_set_operation"
+                },
+                "ResultPath": "$.params",
+                "Next": "Update Instance Task Status?"
+              },
+              "Update Instance Task Status?": {
+                "Type": "Task",
+                "Resource": "${StateMachineLambda.Arn}",
+                "TimeoutSeconds": 300,
+                "HeartbeatSeconds": 60,
+                "InputPath": "$",
+                "Next": "Update Instance Task Completed?"
+              },
+              "Update Instance Task Completed?": {
+                "Type": "Choice",
+                "Choices": [
+                  {
+                    "Variable": "$.OperationStatus",
+                    "StringEquals": "SUCCEEDED",
+                    "Next": "Update Instance Task Completed"
+                  },
+                  {
+                    "Variable": "$.OperationStatus",
+                    "StringEquals": "RUNNING",
+                    "Next": "Update Instance Task Running"
+                  },
+                  {
+                    "Variable": "$.OperationStatus",
+                    "StringEquals": "FAILED",
+                    "Next": "Update Instance Task Failed"
+                  }
+                ],
+                "Default": "Update Task Failed"
+              },
+              "Update Instance Task Completed": {
+                "Type": "Pass",
+                "Next": "Export Stack Output Pass"
+              },
+              "Update Instance Task Failed": {
+                "Type": "Pass",
+                "Next": "Send Failed Pass"
               },
               "Describe StackSet": {
                 "Type": "Pass",
@@ -3343,9 +3502,30 @@ Resources:
                     "Next": "Delete Task Running"
                   },
                   {
-                    "Variable": "$.OperationStatus",
-                    "StringEquals": "FAILED",
-                    "Next": "Delete Task Failed"
+                      "And": [
+                        {
+                            "Variable": "$.RetryDeleteFlag",
+                            "BooleanEquals": false
+                        },
+                        {
+                          "Variable": "$.OperationStatus",
+                          "StringEquals": "FAILED"
+                        }
+                      ],
+                      "Next": "Delete Task Failed"
+                  },
+                  {
+                      "And": [
+                        {
+                            "Variable": "$.RetryDeleteFlag",
+                            "BooleanEquals": true
+                        },
+                        {
+                          "Variable": "$.OperationStatus",
+                          "StringEquals": "FAILED"
+                        }
+                      ],
+                      "Next": "Delete Stack Instances Pass"
                   }
                 ],
                 "Default": "Delete Task Failed"
@@ -3492,11 +3672,6 @@ Resources:
               }
             }
           }
-
-
-
-
-
 
   ServiceCatalogStateMachine:
     Type: 'AWS::StepFunctions::StateMachine'
@@ -5220,4 +5395,4 @@ Outputs:
     Value: !Ref LandingZonePipelineS3Bucket
   LandingZoneSolutionVersion:
     Description: Version Number
-    Value: v2.0
+    Value: v2.0.3
