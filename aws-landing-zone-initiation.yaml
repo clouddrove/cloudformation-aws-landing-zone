@@ -1977,7 +1977,7 @@ Resources:
       ProvisioningArtifactParameters:
         - Info:
             LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.2.0/add-on/aws-ad-with-rdgw-ad-connector.template
-          Name: v1.2
+          Name: v1.2.1
           Description: This version adds a retain policy to protect Active Directory from deletion.
 
   AddLandingZoneAddOnProduct2ToPortfolio:
