@@ -12,7 +12,7 @@
 # permissions and limitations under the License.
 
 AWSTemplateFormatVersion: '2010-09-09'
-Description: (SO0044) - AWS Landing Zone Initiation Template
+Description: '(SO0044) - AWS Landing Zone Version v2.3.0, AddOns Version aov1.0'
 
 Parameters:
   SharedServicesAccountEmail:
@@ -199,6 +199,22 @@ Parameters:
     Default: 90
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
 
+# Add-On Publisher Parameters
+
+  AddonsManagedParameter:
+    Type: String
+    Description: "Should AWS automatically make new versions of Add-On(s) available in the Add-On portfolio?"
+    Default: 'AWS Managed'
+    AllowedValues:
+      - 'AWS Managed'
+      - 'Manual Updates'
+
+  NotificationAddonsEmailParameter:
+    Type: String
+    Description: Email to notify customers that new add-on(s) are available in the Add-On Portfolio.
+    Default: ''
+    MinLength: 0
+    MaxLength: 64
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -247,6 +263,11 @@ Metadata:
         - EnableIamPasswordPolicyRule
         - EnableRestrictedCommonPortsRule
         - EnableRestrictedSshRule
+    - Label:
+        default: "Add-On Publisher Configuration"
+      Parameters:
+        - AddonsManagedParameter
+        - NotificationAddonsEmailParameter
 
     ParameterLabels:
       SharedServicesAccountEmail:
@@ -302,6 +323,11 @@ Metadata:
       LogsRetentionInDays:
         default: VPC Flow Logs Retention In Days
 
+      AddonsManagedParameter:
+        default: "AWS Manages Service Catalog Add-On Portfolio?"
+      NotificationAddonsEmailParameter:
+        default: "Add-On Update Notification Email"
+
 Mappings:
   SSMParameterNames:
     LandingZoneSCProductConstraintRoleParameterName:
@@ -316,9 +342,9 @@ Mappings:
       Name: /org/primary/avm_lambda_arn
   BucketConfiguration:
     SourceBucketName:
-      Name: solutions-reference
+      Name: "solutions-reference"
     SourceKeyName:
-      Name: aws-landing-zone/v2.2.0/aws-landing-zone-configuration.zip
+      Name: aws-landing-zone/v2.3.0/aws-landing-zone-configuration.zip
     LandingZonePipelineS3TriggerKey:
       Name: aws-landing-zone-configuration.zip
     LandingZonePipelineS3NonTriggerKey:
@@ -356,6 +382,8 @@ Mappings:
   Solution:
     Metrics:
       SendAnonymousData: 'Yes'
+    Data:
+      AddonTemplate: 'https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.3.0/aws-landing-zone-initiation.template'
   LambdaFunction:
     Logging:
       Level: 'info'
@@ -368,6 +396,8 @@ Conditions:
   IsPipelineApprovalStageCondition: !Equals [!Ref PipelineApprovalStage, 'Yes']
   IsBuildLandingZoneCondition: !Equals [!Ref BuildLandingZone, 'Yes']
   IsSubscribeToTopicCondition: !Equals [!Ref SubscribeAllChangeEventsEmailToTopic, 'Yes']
+  IsAddonsManagedCondition: !Equals [!Ref AddonsManagedParameter, 'AWS Managed']
+  IsAddonsEmailEmpty: !Equals [!Ref NotificationAddonsEmailParameter, '']
 
 Resources:
   # IAM Role for Service Catalog Principal
@@ -571,6 +601,10 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub aws-landing-zone-configuration-${AWS::AccountId}-${AWS::Region}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
       VersioningConfiguration:
         Status: Enabled
       LoggingConfiguration:
@@ -703,7 +737,7 @@ Resources:
               ActionTypeId:
                 Category: Source
                 Owner: AWS
-                Version: 1
+                Version: "1"
                 Provider: S3
               OutputArtifacts:
                 - Name: SourceApp
@@ -719,7 +753,7 @@ Resources:
                 ActionTypeId:
                   Category: Build
                   Owner: AWS
-                  Version: 1
+                  Version: "1"
                   Provider: CodeBuild
                 OutputArtifacts:
                   - Name: BuiltApp
@@ -733,7 +767,7 @@ Resources:
                 ActionTypeId:
                   Category: Approval
                   Owner: AWS
-                  Version: 1
+                  Version: "1"
                   Provider: Manual
                 RunOrder: 1
                 Configuration:
@@ -747,7 +781,7 @@ Resources:
               ActionTypeId:
                 Category: Invoke
                 Owner: AWS
-                Version: 1
+                Version: "1"
                 Provider: Lambda
               Configuration:
                 FunctionName: !Ref StateMachineTriggerLambda
@@ -761,7 +795,7 @@ Resources:
               ActionTypeId:
                 Category: Invoke
                 Owner: AWS
-                Version: 1
+                Version: "1"
                 Provider: Lambda
               Configuration:
                 FunctionName: !Ref StateMachineTriggerLambda
@@ -775,7 +809,7 @@ Resources:
               ActionTypeId:
                 Category: Invoke
                 Owner: AWS
-                Version: 1
+                Version: "1"
                 Provider: Lambda
               Configuration:
                 FunctionName: !Ref StateMachineTriggerLambda
@@ -789,7 +823,7 @@ Resources:
               ActionTypeId:
                 Category: Invoke
                 Owner: AWS
-                Version: 1
+                Version: "1"
                 Provider: Lambda
               Configuration:
                 FunctionName: !Ref StateMachineTriggerLambda
@@ -803,7 +837,7 @@ Resources:
               ActionTypeId:
                 Category: Invoke
                 Owner: AWS
-                Version: 1
+                Version: "1"
                 Provider: Lambda
               Configuration:
                 FunctionName: !Ref StateMachineTriggerLambda
@@ -817,7 +851,7 @@ Resources:
                 ActionTypeId:
                   Category: Build
                   Owner: AWS
-                  Version: 1
+                  Version: "1"
                   Provider: CodeBuild
                 Configuration:
                   ProjectName: !Ref LaunchAVMCodeBuild
@@ -868,7 +902,7 @@ Resources:
                 Action:
                   - s3:GetObject
                 Resource:
-                  - !Sub "arn:aws:s3:::solutions-reference/*"
+                  - "arn:aws:s3:::solutions-reference/*"
               - Effect: Allow
                 Action:
                   - ssm:GetParameter
@@ -885,7 +919,7 @@ Resources:
           EncryptionKey: !Join ["/", ["alias", !FindInMap [KMS, Alias, Name]]]
           Source:
               Type: CODEPIPELINE
-              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n      ruby: 2.6\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev rsync -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade jinja2\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip install --upgrade pykwalify\n      - pip install cfn_flip\n      - pip freeze\n      - ruby -v\n      - gem -v\n      - gem install cfn-nag -v 0.3.64\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Validation scripts'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.2.0/aws-landing-zone-validation.zip $current\n      - unzip -o $current/aws-landing-zone-validation.zip -d $current\n      - cp bin/lz_scripts/* .\n  build:\n    commands:\n      - echo 'Starting build `date` in `pwd`'\n      - echo 'bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY $NONE_TYPE_VALUES $BOOL_VALUES'\n      - bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY $NONE_TYPE_VALUES $BOOL_VALUES\n      - echo 'Executing validation tests'\n      - echo 'bash $current/validation/run-validation.sh $ARTIFACT_BUCKET'\n      - bash $current/validation/run-validation.sh $ARTIFACT_BUCKET\n      - echo 'Installing validation tests completed `date`'\n      - echo 'Source Dist completed `date`'\n  post_build:\n    commands:\n      - echo 'Starting post build `date` in `pwd`'\n      - echo 'build completed on `date`'\n      - echo 'Printing Merge Report'\n      - cat merge_report.txt\nartifacts:\n  files:\n      - '**/*'\n"
+              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n      ruby: 2.6\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev rsync -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade jinja2\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip install --upgrade pykwalify\n      - pip install cfn_flip\n      - pip freeze\n      - ruby -v\n      - gem -v\n      - gem install cfn-nag -v 0.3.64\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Validation scripts'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.3.0/aws-landing-zone-validation.zip $current\n      - unzip -o $current/aws-landing-zone-validation.zip -d $current\n      - cp bin/lz_scripts/* .\n  build:\n    commands:\n      - echo 'Starting build `date` in `pwd`'\n      - echo 'bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY $NONE_TYPE_VALUES $BOOL_VALUES'\n      - bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY $NONE_TYPE_VALUES $BOOL_VALUES\n      - echo 'Executing validation tests'\n      - echo 'bash $current/validation/run-validation.sh $ARTIFACT_BUCKET'\n      - bash $current/validation/run-validation.sh $ARTIFACT_BUCKET\n      - echo 'Installing validation tests completed `date`'\n      - echo 'Source Dist completed `date`'\n  post_build:\n    commands:\n      - echo 'Starting post build `date` in `pwd`'\n      - echo 'build completed on `date`'\n      - echo 'Printing Merge Report'\n      - cat merge_report.txt\nartifacts:\n  files:\n      - '**/*'\n"
           Environment:
               ComputeType: BUILD_GENERAL1_SMALL
               Image: "aws/codebuild/standard:2.0"
@@ -944,7 +978,7 @@ Resources:
                 Action:
                   - s3:GetObject
                 Resource:
-                  - !Sub "arn:aws:s3:::solutions-reference/*"
+                  - "arn:aws:s3:::solutions-reference/*"
               - Effect: Allow
                 Action:
                   - states:ListExecutions
@@ -977,7 +1011,7 @@ Resources:
           EncryptionKey: !Join ["/", ["alias", !FindInMap [KMS, Alias, Name]]]
           Source:
               Type: CODEPIPELINE
-              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip freeze\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Launch AVM Code'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.2.0/aws-landing-zone-launch-avm.zip $current\n      - unzip -o $current/aws-landing-zone-launch-avm.zip -d $current\n  build:\n    commands:\n      - echo 'Starting Launch AVM `date` in `pwd`'\n      - echo 'python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm $batch_size'\n      - python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm $batch_size\n      - echo 'Completed Launch AVM `date` in `pwd`'\nartifacts:\n  files:\n      - '**/*'\n"
+              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip freeze\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Launch AVM Code'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.3.0/aws-landing-zone-launch-avm.zip $current\n      - unzip -o $current/aws-landing-zone-launch-avm.zip -d $current\n  build:\n    commands:\n      - echo 'Starting Launch AVM `date` in `pwd`'\n      - echo 'python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm $batch_size'\n      - python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm $batch_size\n      - echo 'Completed Launch AVM `date` in `pwd`'\nartifacts:\n  files:\n      - '**/*'\n"
           Environment:
               ComputeType: BUILD_GENERAL1_SMALL
               Image: "aws/codebuild/standard:2.0"
@@ -988,9 +1022,9 @@ Resources:
                   - Name: log_level
                     Value: !FindInMap [LambdaFunction, Logging, Level]
                   - Name: wait_time
-                    Value: 30
+                    Value: "30"
                   - Name: batch_size
-                    Value: 10
+                    Value: "10"
           Artifacts:
               Name: !Sub ${LandingZonePipelineArtifactS3Bucket}-Built
               Type: CODEPIPELINE
@@ -1058,7 +1092,7 @@ Resources:
                 Action:
                   - s3:GetObject
                 Resource:
-                  - !Sub "arn:aws:s3:::solutions-reference/*"
+                  - "arn:aws:s3:::solutions-reference/*"
               - Effect: "Allow"
                 Action:
                   - s3:GetObject
@@ -1073,15 +1107,15 @@ Resources:
           log_level: !FindInMap [LambdaFunction, Logging, Level]
           kms_key_alias_name: !FindInMap [KMS, Alias, Name]
       Code:
-        S3Bucket: !Sub solutions-${AWS::Region}
-        S3Key: aws-landing-zone/v2.2.0/aws-landing-zone-config-deployer.zip
+        S3Bucket: !Sub "solutions-${AWS::Region}"
+        S3Key: aws-landing-zone/v2.3.0/aws-landing-zone-config-deployer.zip
       FunctionName: LandingZoneDeploymentLambda
       Description: AWS Landing Zone Deployment Lambda
       Handler: config_deployer.lambda_handler
-      MemorySize: '512'
+      MemorySize: 512
       Role: !GetAtt 'LandingZoneDeploymentLambdaRole.Arn'
       Runtime: python3.6
-      Timeout: '300'
+      Timeout: 300
       TracingConfig:
           Mode: Active
 
@@ -1320,7 +1354,7 @@ Resources:
           log_level: !FindInMap [LambdaFunction, Logging, Level]
           kms_key_alias_name: !FindInMap [KMS, Alias, Name]
           staging_bucket: !Ref LandingZonePipelineArtifactS3Bucket
-          wait_time: 5
+          wait_time: "5"
           sm_arn_account: !Ref OrganizationsStateMachine
           sm_arn_stack_set: !Ref StackSetStateMachine
           sm_arn_service_control_policy: !Ref ServiceControlPolicyMachine
@@ -1331,15 +1365,15 @@ Resources:
           sm_arn_handshake_sm: !Ref HandshakeStateMachine
           lambda_arn_param_name: !FindInMap [SSMParameterNames, LandingZoneLambdaParameterName, Name]
       Code:
-        S3Bucket: !Sub solutions-${AWS::Region}
-        S3Key: aws-landing-zone/v2.2.0/aws-landing-zone-state-machine-trigger.zip
+        S3Bucket: !Sub "solutions-${AWS::Region}"
+        S3Key: aws-landing-zone/v2.3.0/aws-landing-zone-state-machine-trigger.zip
       FunctionName: LandingZoneStateMachineTriggerLambda
       Description: AWS Landing Zone State Machine Trigger
       Handler: state_machine_trigger.lambda_handler
-      MemorySize: '3008'
+      MemorySize: 3008
       Role: !GetAtt 'StateMachineTriggerLambdaRole.Arn'
       Runtime: python3.6
-      Timeout: '900'
+      Timeout: 900
       TracingConfig:
           Mode: Active
   StateMachineLambdaRole:
@@ -1347,6 +1381,8 @@ Resources:
     Metadata:
       cfn_nag:
         rules_to_suppress:
+          - id: F38
+            reason: "PassRole action is required to make changes to all (*) the Service Catalog Resources"
           - id: W28
             reason: "The role name is defined to identify AWS Landing Zone resources."
           - id: W11
@@ -1560,15 +1596,15 @@ Resources:
           ssm_key_for_lock_down_role_arns: lock_down_role_arns_list
           unlock_role_arns: !Sub arn:aws:iam::${AWS::AccountId}:root
       Code:
-        S3Bucket: !Sub solutions-${AWS::Region}
-        S3Key: aws-landing-zone/v2.2.0/aws-landing-zone-state-machine.zip
+        S3Bucket: !Sub "solutions-${AWS::Region}"
+        S3Key: aws-landing-zone/v2.3.0/aws-landing-zone-state-machine.zip
       FunctionName: LandingZoneStateMachineLambda
       Description: AWS Landing Zone State Machine Handler
       Handler: state_machine_router.lambda_handler
-      MemorySize: '1024'
+      MemorySize: 1024
       Role: !GetAtt 'StateMachineLambdaRole.Arn'
       Runtime: python3.6
-      Timeout: '300'
+      Timeout: 300
       TracingConfig:
           Mode: Active
 
@@ -1671,17 +1707,17 @@ Resources:
       Environment:
         Variables:
           log_level: !FindInMap [LambdaFunction, Logging, Level]
-          wait_time: 15
+          wait_time: '15'
       Code:
-        S3Bucket: !Sub solutions-${AWS::Region}
-        S3Key: aws-landing-zone/v2.2.0/aws-landing-zone-handshake-state-machine.zip
+        S3Bucket: !Sub "solutions-${AWS::Region}"
+        S3Key: aws-landing-zone/v2.3.0/aws-landing-zone-handshake-state-machine.zip
       Description: AWS Lambda-backed Custom Resources for Handshake Mechanism
       FunctionName: LandingZoneHandshakeSMLambda
       Handler: handshake_sm_router.lambda_handler
-      MemorySize: '1024'
+      MemorySize: 1024
       Role: !GetAtt 'HandshakeSMLambdaRole.Arn'
       Runtime: python3.6
-      Timeout: '660'
+      Timeout: 660
       TracingConfig:
         Mode: Active
 
@@ -1780,14 +1816,7 @@ Resources:
                   - states:ListExecutions
                   - states:StartExecution
                   - states:StopExecution
-                Resource:
-                  - !Ref OrganizationsStateMachine
-                  - !Ref ServiceControlPolicyMachine
-                  - !Ref StackSetStateMachine
-                  - !Ref ServiceCatalogStateMachine
-                  - !Ref LaunchAVMStateMachine
-                  - !Ref CheckAVMExistsStateMachine
-                  - !Ref HandshakeStateMachine
+                Resource: '*'
               - Effect: Allow
                 Action:
                   - ec2:DescribeInternetGateways
@@ -1845,15 +1874,15 @@ Resources:
           sm_arn_check_avm_exists: !Ref CheckAVMExistsStateMachine
           sm_arn_handshake_sm: !Ref HandshakeStateMachine
       Code:
-        S3Bucket: !Sub solutions-${AWS::Region}
-        S3Key: aws-landing-zone/v2.2.0/aws-landing-zone-avm-cr.zip
+        S3Bucket: !Sub "solutions-${AWS::Region}"
+        S3Key: aws-landing-zone/v2.3.0/aws-landing-zone-avm-cr.zip
       Description: AWS Lambda-backed Custom Resources for AVM
       FunctionName: LandingZone
       Handler: lambda_custom_resource.lambda_handler
-      MemorySize: '1024'
+      MemorySize: 1024
       Role: !GetAtt 'LandingZoneLambdaRole.Arn'
       Runtime: python3.6
-      Timeout: '300'
+      Timeout: 300
       TracingConfig:
           Mode: Active
 
@@ -1922,83 +1951,6 @@ Resources:
                 Action:
                   - "lambda:InvokeFunction"
                 Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*"
-
-  #Service Catalog Portfolio for Add-On Products
-  LandingZoneAddOnPortfolio:
-    Type: "AWS::ServiceCatalog::Portfolio"
-    Properties:
-      ProviderName: AWS Solutions
-      Description: Add-On Products for AWS Landing Zone
-      DisplayName: AWS Landing Zone - Add-On Products
-      Tags:
-        - Key: AWS Solutions
-          Value: Landing Zone Solution
-
-  #Service Catalog Add-On Product1
-  LandingZoneAddOnProduct1:
-    Type: "AWS::ServiceCatalog::CloudFormationProduct"
-    Properties:
-      Name: AWS Centralized Logging Solution - Landing Zone Add-On
-      Owner: AWS Solutions
-      Description: Install the centralized log aggregation and monitoring solution
-      ProvisioningArtifactParameters:
-        - Info:
-            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.2.0/add-on/aws-centralized-logging-soution.template
-          Name: v1.1
-
-  AddLandingZoneAddOnProduct1ToPortfolio:
-    Type: "AWS::ServiceCatalog::PortfolioProductAssociation"
-    DependsOn:
-      - LandingZoneAddOnPortfolio
-      - LandingZoneAddOnProduct1
-    Properties:
-      PortfolioId: !Ref LandingZoneAddOnPortfolio
-      ProductId: !Ref LandingZoneAddOnProduct1
-
-  LandingZoneAddOnProduct1LaunchConstraint:
-    Type: "AWS::ServiceCatalog::LaunchRoleConstraint"
-    DependsOn:
-      - LandingZoneAddOnPortfolio
-      - LandingZoneAddOnProduct1
-      - AddLandingZoneAddOnProduct1ToPortfolio
-    Properties:
-      Description: !Sub Constraint for Product ID - ${LandingZoneAddOnProduct1}
-      PortfolioId: !Ref LandingZoneAddOnPortfolio
-      ProductId: !Ref LandingZoneAddOnProduct1
-      RoleArn: !Sub ${LandingZoneSCProductConstraintRole.Arn}
-
-  #Service Catalog Add-On Product2
-  LandingZoneAddOnProduct2:
-    Type: "AWS::ServiceCatalog::CloudFormationProduct"
-    Properties:
-      Name: AWS Managed AD and Directory Connector for AWS SSO - Landing Zone Add-On
-      Owner: AWS Solutions
-      Description: This AWS Landing Zone add-on will deploy Directory Connector for AWS SSO peered with AWS Managed Active Directory and a Remote Desktop Gateway in the shared service account. Use this add-on to provide an AWS managed AD infrastructure for controlling user access to AWS and your EC2 instances.
-      ProvisioningArtifactParameters:
-        - Info:
-            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.2.0/add-on/aws-ad-with-rdgw-ad-connector.template
-          Name: v1.2.1
-          Description: This version adds a retain policy to protect Active Directory from deletion.
-
-  AddLandingZoneAddOnProduct2ToPortfolio:
-    Type: "AWS::ServiceCatalog::PortfolioProductAssociation"
-    DependsOn:
-      - LandingZoneAddOnPortfolio
-      - LandingZoneAddOnProduct2
-    Properties:
-      PortfolioId: !Ref LandingZoneAddOnPortfolio
-      ProductId: !Ref LandingZoneAddOnProduct2
-  LandingZoneAddOnProduct2LaunchConstraint:
-    Type: "AWS::ServiceCatalog::LaunchRoleConstraint"
-    DependsOn:
-      - LandingZoneAddOnPortfolio
-      - LandingZoneAddOnProduct2
-      - AddLandingZoneAddOnProduct2ToPortfolio
-    Properties:
-      Description: !Sub Constraint for Product ID - ${LandingZoneAddOnProduct2}
-      PortfolioId: !Ref LandingZoneAddOnPortfolio
-      ProductId: !Ref LandingZoneAddOnProduct2
-      RoleArn: !Sub ${LandingZoneSCProductConstraintRole.Arn}
 
   OrganizationsStateMachine:
     Type: 'AWS::StepFunctions::StateMachine'
@@ -5611,6 +5563,191 @@ Resources:
             }
           }
 
+# Add-On Publisher Resources
+
+  # Permissions & Policies
+
+  PublisherScheduleRulePermission:
+    Type: AWS::Lambda::Permission
+    Condition: IsAddonsManagedCondition
+    Properties:
+      FunctionName: !Ref PublishAddonsFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt PublisherScheduleRule.Arn
+
+  PublisherLambdaRole:
+    Condition: IsAddonsManagedCondition
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "Allow Resource * to allow updating resources defined by the customer."
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSServiceCatalogAdminFullAccess
+      Policies:
+        - PolicyName: LambdaPublisherPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Join ['', ['arn:aws:logs:', !Ref 'AWS::Region', ':', !Ref 'AWS::AccountId',
+                      ':log-group:/aws/lambda/*']]
+              - Effect: Allow
+                Action:
+                  - cloudformation:GetTemplateSummary
+                  - cloudformation:DescribeStacks
+                  - cloudformation:ValidateTemplate
+                  - cloudformation:CreateUploadBucket
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - cloudformation:UpdateStack
+                Resource: !Sub ${AWS::StackId}
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref AddonSNSTopic
+
+  # SNS Topic
+
+  AddonSNSTopic:
+    Type: AWS::SNS::Topic
+    Condition: IsAddonsManagedCondition
+    Properties:
+      Subscription:
+      - Endpoint: !If [IsAddonsEmailEmpty, 'no-notifications@email.com', !Ref NotificationAddonsEmailParameter]
+        Protocol: email
+      TopicName: 'LZ-Addon-Updates'
+
+  # Lambda
+
+  PublishAddonsFunction:
+    Type: AWS::Lambda::Function
+    Condition: IsAddonsManagedCondition
+    Properties:
+      Role: !GetAtt PublisherLambdaRole.Arn
+      Description: AWS Landing Zone Addons Publisher
+      Environment:
+        Variables:
+          AddonTemplate: !FindInMap [Solution, Data, "AddonTemplate"]
+          AddonStack: !Sub ${AWS::StackId}
+          AddonTopic: !If [IsAddonsManagedCondition, !Ref AddonSNSTopic, '']
+          ReleaseNotes: https://solutions-reference.s3.amazonaws.com/aws-landing-zone/v2.3.0/release_notes.html
+          log_level: !FindInMap [LambdaFunction, Logging, Level]
+      Code:
+        S3Bucket: !Sub "solutions-${AWS::Region}"
+        S3Key: aws-landing-zone/v2.3.0/aws-landing-zone-addon-publisher.zip
+      FunctionName: LandingZoneAddonPublisher
+      Handler: publish.lambda_handler
+      Runtime: python3.7
+      Timeout: 900
+
+  # CloudWatch [start]
+
+  PublisherScheduleRule:
+    Type: AWS::Events::Rule
+    Condition: IsAddonsManagedCondition
+    Properties:
+      Description: Rule to trigger Publisher function on a schedule.
+      ScheduleExpression: cron(55 11 * * ? *)
+      State: ENABLED
+      Targets:
+      - Arn: !GetAtt PublishAddonsFunction.Arn
+        Id: PublishAddonsFunction
+
+  # CloudWatch [end]
+
+  # Addons Resources aov1.0
+
+  #Service Catalog Portfolio for Add-On Products
+  LandingZoneAddOnPortfolio:
+    Type: "AWS::ServiceCatalog::Portfolio"
+    Properties:
+      ProviderName: AWS Solutions
+      Description: Add-On Products for AWS Landing Zone
+      DisplayName: AWS Landing Zone - Add-On Products
+      Tags:
+        - Key: AWS Solutions
+          Value: Landing Zone Solution
+
+  #Service Catalog Add-On Product1
+  LandingZoneAddOnProduct1:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: AWS Centralized Logging Solution - Landing Zone Add-On
+      Owner: AWS Solutions
+      Description: Install the centralized log aggregation and monitoring solution
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.3.0/add-on/aws-centralized-logging-solution.template
+          Name: v1.1
+
+  AddLandingZoneAddOnProduct1ToPortfolio:
+    Type: "AWS::ServiceCatalog::PortfolioProductAssociation"
+    Properties:
+      PortfolioId: !Ref LandingZoneAddOnPortfolio
+      ProductId: !Ref LandingZoneAddOnProduct1
+
+  LandingZoneAddOnProduct1LaunchConstraint:
+    Type: "AWS::ServiceCatalog::LaunchRoleConstraint"
+    DependsOn:
+      - AddLandingZoneAddOnProduct1ToPortfolio
+    Properties:
+      Description: !Sub Constraint for Product ID - ${LandingZoneAddOnProduct1}
+      PortfolioId: !Ref LandingZoneAddOnPortfolio
+      ProductId: !Ref LandingZoneAddOnProduct1
+      RoleArn: !Sub ${LandingZoneSCProductConstraintRole.Arn}
+
+  #Service Catalog Add-On Product2
+  LandingZoneAddOnProduct2:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: AWS Managed AD and Directory Connector for AWS SSO - Landing Zone Add-On
+      Owner: AWS Solutions
+      Description: This AWS Landing Zone add-on will deploy Directory Connector for AWS SSO peered with AWS Managed Active Directory and a Remote Desktop Gateway in the shared service account. Use this add-on to provide an AWS managed AD infrastructure for controlling user access to AWS and your EC2 instances.
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.3.0/add-on/aws-ad-with-rdgw-ad-connector.template
+          Name: v1.2.1
+          Description: This version adds a retain policy to protect Active Directory from deletion.
+
+  AddLandingZoneAddOnProduct2ToPortfolio:
+    Type: "AWS::ServiceCatalog::PortfolioProductAssociation"
+    Properties:
+      PortfolioId: !Ref LandingZoneAddOnPortfolio
+      ProductId: !Ref LandingZoneAddOnProduct2
+
+  LandingZoneAddOnProduct2LaunchConstraint:
+    Type: "AWS::ServiceCatalog::LaunchRoleConstraint"
+    DependsOn:
+      - AddLandingZoneAddOnProduct2ToPortfolio
+    Properties:
+      Description: !Sub Constraint for Product ID - ${LandingZoneAddOnProduct2}
+      PortfolioId: !Ref LandingZoneAddOnPortfolio
+      ProductId: !Ref LandingZoneAddOnProduct2
+      RoleArn: !Sub ${LandingZoneSCProductConstraintRole.Arn}
+
 Outputs:
   LandingZoneCodePipeline:
     Description: AWS Landing Zone CodePipieline
@@ -5620,6 +5757,11 @@ Outputs:
     Value: !Ref LandingZonePipelineS3Bucket
   LandingZoneSolutionVersion:
     Description: Version Number
-    Value: v2.2.0
+    Value: "v2.3.0"
     Export:
       Name: AWS-Landing-Zone-Version
+  LandingZoneAddonsVersion:
+    Description: Addons Version Number
+    Value: "aov1.0"
+    Export:
+      Name: AWS-Landing-Zone-Addons-Version
