@@ -9,3 +9,4 @@
  - [Implementation Guide](http://www.awslandingzone.com/guides/aws-landing-zone-implementation-guide.pdf)
  - [Developers Guide](http://www.awslandingzone.com/guides/aws-landing-zone-developer-guide.pdf)
  - [User Guide](http://www.awslandingzone.com/guides/aws-landing-zone-user-guide.pdf)
+ - [Upgrade Guide](http://www.awslandingzone.com/guides/aws-landing-zone-upgrade-guide.pdf)
