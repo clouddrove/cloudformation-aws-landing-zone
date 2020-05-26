@@ -1,4 +1,4 @@
-#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved. 
+#  Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 #  Licensed under the Apache License Version 2.0 (the "License"). You may not 
 #  use this file except in compliance with the License. A copy of the License is 
@@ -12,7 +12,7 @@
 #  limitations under the License.      
 #
 AWSTemplateFormatVersion: '2010-09-09'
-Description: '(SO0044) - AWS Landing Zone Version v2.3.1, AddOns Version aov1.0'
+Description: '(SO0044) - AWS Landing Zone Version v2.4.0, AddOns Version aov1.0'
 
 Parameters:
   SharedServicesAccountEmail:
@@ -344,11 +344,15 @@ Mappings:
     SourceBucketName:
       Name: "solutions-reference"
     SourceKeyName:
-      Name: aws-landing-zone/v2.3.1/aws-landing-zone-configuration.zip
+      Name: aws-landing-zone/v2.4.0/aws-landing-zone-configuration.zip
     LandingZonePipelineS3TriggerKey:
       Name: aws-landing-zone-configuration.zip
     LandingZonePipelineS3NonTriggerKey:
       Name: _aws-landing-zone-configuration.zip
+  CloudFormationDeploymentOptions:
+    Percentage:
+      MaximumConcurrentAccounts: '100'
+      FailureTolerance: '10'
   KMS:
     Alias:
       Name: AwsLandingZoneKMSKey
@@ -383,7 +387,7 @@ Mappings:
     Metrics:
       SendAnonymousData: 'Yes'
     Data:
-      AddonTemplate: 'https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.3.1/aws-landing-zone-initiation.template'
+      AddonTemplate: 'https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.4.0/aws-landing-zone-initiation.template'
   LambdaFunction:
     Logging:
       Level: 'info'
@@ -413,6 +417,7 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSServiceCatalogEndUserFullAccess
+
   # IAM Role for Service Catalog Product Constraint
   LandingZoneSCProductConstraintRole:
     Type: AWS::IAM::Role
@@ -472,8 +477,6 @@ Resources:
               - Effect: Allow
                 Action:
                   - states:DescribeStateMachine
-                  - states:DescribeStateMachineForExecution
-                  - states:DescribeExecution
                   - states:ListExecutions
                   - states:StartExecution
                   - states:StopExecution
@@ -484,6 +487,19 @@ Resources:
                   - Fn::Sub: ${ServiceCatalogStateMachine}
                   - Fn::Sub: ${LaunchAVMStateMachine}
                   - Fn::Sub: ${CheckAVMExistsStateMachine}
+              - Effect: Allow
+                Action:
+                  - states:DescribeStateMachineForExecution
+                  - states:DescribeExecution
+                Resource:
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${OrganizationsStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${ServiceControlPolicyMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${StackSetStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${ServiceCatalogStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${LaunchAVMStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${CheckAVMExistsStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${HandshakeStateMachine.Name}:*
+
   # IAM Role for CloudFormation StackSet Administration in Master account
   AWSCloudFormationStackSetAdministrationRole:
     Metadata:
@@ -525,7 +541,7 @@ Resources:
           - id: W28
             reason: "The role name is defined to allow cross account access from the master account."
           - id: W43
-            reason: "Temporary exception to be removed post v2.3.1"
+            reason: "The admin permissions needed for StackSet service to deploy unknown customer defined resources."
     Properties:
       RoleName: AWSCloudFormationStackSetExecutionRole
       AssumeRolePolicyDocument:
@@ -558,6 +574,7 @@ Resources:
       Value:
         Fn::Sub:
           '${StateMachineLambdaRole.Arn}'
+
   # SSM Parameter to store the IAM Role ARN of Service Catalog Constraint
   LandingZoneSCProductConstraintRoleParameter:
     DependsOn:
@@ -606,11 +623,6 @@ Resources:
 
   LandingZonePipelineS3Bucket:
     Type: AWS::S3::Bucket
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W51
-            reason: "Temporary exception to be removed post v2.3.1"
     Properties:
       BucketName: !Sub aws-landing-zone-configuration-${AWS::AccountId}-${AWS::Region}
       BucketEncryption:
@@ -629,11 +641,6 @@ Resources:
 
   LandingZonePipelineArtifactS3Bucket:
     Type: AWS::S3::Bucket
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W51
-            reason: "Temporary exception to be removed post v2.3.1"
     DeletionPolicy: Retain
     Properties:
       VersioningConfiguration:
@@ -649,6 +656,31 @@ Resources:
         BlockPublicPolicy: True
         IgnorePublicAcls: True
         RestrictPublicBuckets: True
+
+  LandingZonePipelineS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LandingZonePipelineS3Bucket
+      PolicyDocument:
+        Statement:
+          - Sid: DenyDeleteBucket
+            Effect: Deny
+            Principal: "*"
+            Action: s3:DeleteBucket
+            Resource: !Sub "arn:aws:s3:::${LandingZonePipelineS3Bucket}"
+
+  LandingZonePipelineArtifactS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LandingZonePipelineArtifactS3Bucket
+      PolicyDocument:
+        Statement:
+          - Sid: DenyDeleteBucket
+            Effect: Deny
+            Principal: "*"
+            Action: s3:DeleteBucket
+            Resource: !Sub "arn:aws:s3:::${LandingZonePipelineArtifactS3Bucket}"
+
 
   # Create buckets using S3-SSE keys for default encryption
   S3LoggingBucket:
@@ -675,7 +707,7 @@ Resources:
         BlockPublicPolicy: True
         IgnorePublicAcls: True
         RestrictPublicBuckets: True
-
+##
   LandingZoneCodePipelineRole:
     Type: AWS::IAM::Role
     Metadata:
@@ -718,18 +750,22 @@ Resources:
                   - !Sub "arn:aws:s3:::${LandingZonePipelineS3Bucket}/*"
               - Effect: Allow
                 Action:
-                - ssm:PutParameter
-                - ssm:GetParameter
-                - ssm:DeleteParameter
-                - ssm:GetParametersByPath
-                - ssm:DescribeParameters
-                Resource: '*'
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:DeleteParameter
+                  - ssm:GetParametersByPath
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*
+              - Effect: Allow
+                Action:
+                  - ssm:DescribeParameters
+                Resource: '*' # The APIs above only support '*' resource.
               - Effect: "Allow"
                 Action:
                   - "codebuild:BatchGetBuilds"
                   - "codebuild:StartBuild"
                 Resource:
                   - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${LandingZoneCodeBuild}"
+                  - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${BaselineResourceCodeBuild}"
                   - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${LaunchAVMCodeBuild}"
               - Effect: "Allow"
                 Action:
@@ -865,18 +901,16 @@ Resources:
               RunOrder: 1
         - Name: BaselineResource
           Actions:
-            - Name: Deploy
+            - Name: CodeBuild
               InputArtifacts:
                 - Name: BuiltApp
               ActionTypeId:
-                Category: Invoke
+                Category: Build
                 Owner: AWS
                 Version: "1"
-                Provider: Lambda
+                Provider: CodeBuild
               Configuration:
-                FunctionName: !Ref StateMachineTriggerLambda
-                UserParameters: "{\"pipeline_stage\": \"baseline_resources\", \"artifact\" : \"BuiltApp\", \"exec_mode\" : \"sequential\"}"
-              RunOrder: 1
+                ProjectName: !Ref BaselineResourceCodeBuild
         - Name: LaunchAVM
           Actions:
               - Name: CodeBuild
@@ -889,7 +923,7 @@ Resources:
                   Provider: CodeBuild
                 Configuration:
                   ProjectName: !Ref LaunchAVMCodeBuild
-
+##
   LandingZoneCodeBuildRole:
     Type: "AWS::IAM::Role"
     Metadata:
@@ -931,7 +965,8 @@ Resources:
                 Action:
                   - s3:GetObject
                   - cloudformation:ValidateTemplate
-                Resource: "*"
+                Resource: "*" # needed to support a feature that allows customer to define s3 links in manifest and
+                # download template from any bucket
               - Effect: "Allow"
                 Action:
                   - s3:GetObject
@@ -941,6 +976,9 @@ Resources:
                 Action:
                   - ssm:GetParameter
                   - ssm:GetParametersByPath
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*
+              - Effect: Allow
+                Action:
                   - ssm:DescribeParameters
                 Resource: '*'
 
@@ -953,7 +991,7 @@ Resources:
           EncryptionKey: !Join ["/", ["alias", !FindInMap [KMS, Alias, Name]]]
           Source:
               Type: CODEPIPELINE
-              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n      ruby: 2.6\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev rsync -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade jinja2\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip install --upgrade pykwalify\n      - pip install cfn_flip\n      - pip freeze\n      - ruby -v\n      - gem -v\n      - gem install cfn-nag -v 0.3.64\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Validation scripts'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.3.1/aws-landing-zone-validation.zip $current\n      - unzip -o $current/aws-landing-zone-validation.zip -d $current\n      - cp bin/lz_scripts/* .\n  build:\n    commands:\n      - echo 'Starting build `date` in `pwd`'\n      - echo 'bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY $NONE_TYPE_VALUES $BOOL_VALUES'\n      - bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY $NONE_TYPE_VALUES $BOOL_VALUES\n      - echo 'Executing validation tests'\n      - echo 'bash $current/validation/run-validation.sh $ARTIFACT_BUCKET'\n      - bash $current/validation/run-validation.sh $ARTIFACT_BUCKET\n      - echo 'Installing validation tests completed `date`'\n      - echo 'Source Dist completed `date`'\n  post_build:\n    commands:\n      - echo 'Starting post build `date` in `pwd`'\n      - echo 'build completed on `date`'\n      - echo 'Printing Merge Report'\n      - cat merge_report.txt\nartifacts:\n  files:\n      - '**/*'\n"
+              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n      ruby: 2.6\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev rsync -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade jinja2\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip install --upgrade pykwalify\n      - pip install cfn_flip\n      - pip freeze\n      - ruby -v\n      - gem -v\n      - gem install cfn-nag -v 0.3.64\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Validation scripts'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.4.0/aws-landing-zone-validation.zip $current\n      - unzip -o $current/aws-landing-zone-validation.zip -d $current\n      - cp bin/lz_scripts/* .\n  build:\n    commands:\n      - echo 'Starting build `date` in `pwd`'\n      - echo 'bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY $NONE_TYPE_VALUES $BOOL_VALUES'\n      - bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY $NONE_TYPE_VALUES $BOOL_VALUES\n      - echo 'Executing validation tests'\n      - echo 'bash $current/validation/run-validation.sh $ARTIFACT_BUCKET'\n      - bash $current/validation/run-validation.sh $ARTIFACT_BUCKET\n      - echo 'Installing validation tests completed `date`'\n      - echo 'Source Dist completed `date`'\n  post_build:\n    commands:\n      - echo 'Starting post build `date` in `pwd`'\n      - echo 'build completed on `date`'\n      - echo 'Printing Merge Report'\n      - cat merge_report.txt\nartifacts:\n  files:\n      - '**/*'\n"
           Environment:
               ComputeType: BUILD_GENERAL1_SMALL
               Image: "aws/codebuild/standard:2.0"
@@ -970,6 +1008,111 @@ Resources:
           Artifacts:
               Name: !Sub ${LandingZonePipelineArtifactS3Bucket}-Built
               Type: CODEPIPELINE
+
+  BaselineResourceCodeBuildRole:
+    Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "Allow * for Organizations APIs to list/describe/move user created child accounts in the AWS Organizations"
+          - id: W11
+            reason: "Allow * for states:DescribeStateMachineForExecution and states:DescribeExecution because the state machine execution ARNs are generated at run-time"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "codebuild.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: "AWS-Landing-Zone-Baseline-Resource-CodeBuild-Policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*"
+              - Effect: "Allow"
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub "arn:aws:s3:::${LandingZonePipelineArtifactS3Bucket}/*"
+              - Effect: "Allow"
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - "arn:aws:s3:::solutions-reference/*"
+              - Effect: Allow
+                Action:
+                  - states:ListExecutions
+                  - states:StartExecution
+                  - states:StopExecution
+                  - states:DescribeStateMachine
+                Resource:
+                  - !Ref StackSetStateMachine
+              - Effect: Allow
+                Action:
+                  - states:DescribeStateMachineForExecution
+                  - states:DescribeExecution
+                Resource:
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${StackSetStateMachine.Name}:*
+              - Effect: Allow
+                Action:
+                  - organizations:ListRoots
+                  - organizations:ListOrganizationalUnitsForParent
+                  - organizations:ListAccountsForParent
+                Resource: '*' # The APIs above only support '*' resource.
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource: 'arn:aws:iam::*:role/AWSCloudFormationStackSetExecutionRole'
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:PutParameter
+                  - ssm:GetParametersByPath
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*
+              - Effect: Allow
+                Action:
+                  - ssm:DescribeParameters
+                Resource: '*' # The APIs above only support '*' resource.
+              - Effect: Allow
+                Action:
+                  - kms:Encrypt
+                  - kms:Decrypt
+                  - kms:ReEncryptFrom
+                  - kms:ReEncryptTo
+                  - kms:GenerateDataKey
+                  - kms:GenerateDataKeyWithoutPlaintext
+                  - kms:DescribeKey
+                Resource:
+                  - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource: 'arn:aws:iam::*:role/AWSCloudFormationStackSetExecutionRole'
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeAvailabilityZones
+                Resource:
+                  - '*' # The APIs above only support '*' resource.
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStackSet
+                  - cloudformation:ListStackInstances
+                  - cloudformation:ListStackSetOperations
+                Resource:
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stackset/*
 
   LaunchAVMCodeBuildRole:
     Type: "AWS::IAM::Role"
@@ -1026,7 +1169,15 @@ Resources:
                   - states:DescribeStateMachineForExecution
                   - states:DescribeExecution
                 Resource:
-                  - '*'
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${LaunchAVMStateMachine.Name}:*
+              - Effect: Allow
+                Action:
+                  - servicecatalog:ListPortfolios
+                  - servicecatalog:SearchProvisionedProducts
+                  - servicecatalog:SearchProductsAsAdmin
+                  - servicecatalog:ListProvisioningArtifacts
+                  - cloudformation:DescribeStacks
+                Resource: '*'
               - Effect: Allow
                 Action:
                   - organizations:ListRoots
@@ -1035,6 +1186,38 @@ Resources:
                   - organizations:DescribeAccount
                   - organizations:MoveAccount
                 Resource: '*'
+
+  BaselineResourceCodeBuild:
+      Type: AWS::CodeBuild::Project
+      DependsOn: LandingZoneDeploymentLambda
+      Properties:
+          Name: AWS-Landing-Zone-Baseline-Resources-CodeBuild
+          ServiceRole: !GetAtt BaselineResourceCodeBuildRole.Arn
+          EncryptionKey: !Join ["/", ["alias", !FindInMap [KMS, Alias, Name]]]
+          Source:
+              Type: CODEPIPELINE
+              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip freeze\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Baseline Resource Deployments Code'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.4.0/aws-landing-zone-baseline-resource.zip $current\n      - unzip -o $current/aws-landing-zone-baseline-resource.zip -d $current\n  build:\n    commands:\n      - echo 'Starting Baseline Resource Deployments `date` in `pwd`'\n      - echo 'python3 launch_baseline_resources.py $LOG_LEVEL $WAIT_TIME $current/manifest.yaml $SM_ARN_STACK_SET $ARTIFACT_BUCKET $STAGE_NAME $KMS_KEY_ALIAS_NAME'\n      - python3 launch_baseline_resources.py $LOG_LEVEL $WAIT_TIME $current/manifest.yaml $SM_ARN_STACK_SET $ARTIFACT_BUCKET $STAGE_NAME $KMS_KEY_ALIAS_NAME\n      - echo 'Completed Baseline Resource Deployments `date` in `pwd`'\nartifacts:\n  files:\n      - '**/*'\n"
+          Environment:
+              ComputeType: BUILD_GENERAL1_SMALL
+              Image: "aws/codebuild/standard:2.0"
+              Type: LINUX_CONTAINER
+              EnvironmentVariables:
+                  - Name: SM_ARN_STACK_SET
+                    Value: !Ref StackSetStateMachine
+                  - Name: LOG_LEVEL
+                    Value: !FindInMap [LambdaFunction, Logging, Level]
+                  - Name: WAIT_TIME
+                    Value: "30"
+                  - Name: STAGE_NAME
+                    Value: "BaselineResources"
+                  - Name: ARTIFACT_BUCKET
+                    Value: !Ref LandingZonePipelineArtifactS3Bucket
+                  - Name: KMS_KEY_ALIAS_NAME
+                    Value: !FindInMap [KMS, Alias, Name]
+          Artifacts:
+              Name: !Sub ${LandingZonePipelineArtifactS3Bucket}-Built
+              Type: CODEPIPELINE
+          TimeoutInMinutes: 480
 
   LaunchAVMCodeBuild:
       Type: AWS::CodeBuild::Project
@@ -1045,7 +1228,7 @@ Resources:
           EncryptionKey: !Join ["/", ["alias", !FindInMap [KMS, Alias, Name]]]
           Source:
               Type: CODEPIPELINE
-              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip freeze\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Launch AVM Code'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.3.1/aws-landing-zone-launch-avm.zip $current\n      - unzip -o $current/aws-landing-zone-launch-avm.zip -d $current\n  build:\n    commands:\n      - echo 'Starting Launch AVM `date` in `pwd`'\n      - echo 'python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm $batch_size'\n      - python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm $batch_size\n      - echo 'Completed Launch AVM `date` in `pwd`'\nartifacts:\n  files:\n      - '**/*'\n"
+              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python-pip libyaml-dev -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv\n      - pip install --upgrade PyYAML\n      - pip install --upgrade yorm\n      - pip install --upgrade boto3\n      - pip install --upgrade pyyaml\n      - pip freeze\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Launch AVM Code'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.4.0/aws-landing-zone-launch-avm.zip $current\n      - unzip -o $current/aws-landing-zone-launch-avm.zip -d $current\n  build:\n    commands:\n      - echo 'Starting Launch AVM `date` in `pwd`'\n      - echo 'python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm $batch_size'\n      - python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm $batch_size\n      - echo 'Completed Launch AVM `date` in `pwd`'\nartifacts:\n  files:\n      - '**/*'\n"
           Environment:
               ComputeType: BUILD_GENERAL1_SMALL
               Image: "aws/codebuild/standard:2.0"
@@ -1094,7 +1277,7 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - !Join ['', ['arn:aws:logs:', !Ref 'AWS::Region', ':', !Ref 'AWS::AccountId',':log-group:/aws/lambda/*']]
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
               - Effect: Allow
                 Action:
                   - xray:PutTraceSegments
@@ -1104,22 +1287,37 @@ Resources:
                 Action:
                   - s3:GetEncryptionConfiguration
                   - s3:PutEncryptionConfiguration
-                Resource: '*'
+                Resource:
+                  - !GetAtt LandingZonePipelineS3Bucket.Arn
               - Effect: "Allow"
                 Action:
-                  - "kms:CreateKey"
-                  - "kms:CreateAlias"
-                  - "kms:ListAliases"
-                  - "kms:DescribeKey"
-                  - "kms:TagResource"
-                  - "kms:PutKeyPolicy"
+                  - kms:DescribeKey
+                  - kms:TagResource
+                  - kms:PutKeyPolicy
+                  - kms:GetKeyRotationStatus
+                  - kms:EnableKeyRotation
+                Resource:
+                  - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
+              - Effect: "Allow"
+                Action:
+                  - kms:CreateKey
+                  - kms:ListAliases
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - kms:CreateAlias
+                Resource:
+                  - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/*
+                  - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
               - Effect: Allow
                 Action:
                   - ssm:PutParameter
                   - ssm:GetParameter
                   - ssm:DeleteParameter
                   - ssm:GetParametersByPath
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*
+              - Effect: Allow
+                Action:
                   - ssm:DescribeParameters
                 Resource: '*'
               - Effect: "Allow"
@@ -1130,7 +1328,7 @@ Resources:
               - Effect: "Allow"
                 Action:
                   - s3:GetObject
-                  - "s3:PutObject"
+                  - s3:PutObject
                 Resource:
                   - !Sub "arn:aws:s3:::${LandingZonePipelineS3Bucket}/*"
   LandingZoneDeploymentLambda:
@@ -1139,16 +1337,16 @@ Resources:
       Environment:
         Variables:
           log_level: !FindInMap [LambdaFunction, Logging, Level]
-          kms_key_alias_name: !FindInMap [KMS, Alias, Name]
+          KMS_KEY_ALIAS_NAME: !FindInMap [KMS, Alias, Name]
       Code:
         S3Bucket: !Sub "solutions-${AWS::Region}"
-        S3Key: aws-landing-zone/v2.3.1/aws-landing-zone-config-deployer.zip
+        S3Key: aws-landing-zone/v2.4.0/aws-landing-zone-config-deployer.zip
       FunctionName: LandingZoneDeploymentLambda
       Description: AWS Landing Zone Deployment Lambda
       Handler: config_deployer.lambda_handler
       MemorySize: 512
       Role: !GetAtt 'LandingZoneDeploymentLambdaRole.Arn'
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 300
       TracingConfig:
           Mode: Active
@@ -1204,6 +1402,7 @@ Resources:
                     - Fn::Sub: ${LandingZoneCodePipelineRole.Arn}
                     - Fn::Sub: ${HandshakeSMLambdaRole.Arn}
                     - Fn::Sub: ${LandingZoneCodeBuildRole.Arn}
+                    - Fn::Sub: ${BaselineResourceCodeBuildRole.Arn}
                     - Fn::Sub: ${LaunchAVMCodeBuildRole.Arn}
               Action:
                 - "kms:Encrypt"
@@ -1272,6 +1471,8 @@ Resources:
         rules_to_suppress:
           - id: W28
             reason: "The role name is defined to identify AWS Landing Zone resources."
+          - id: W76
+            reason: "This is not a security concern. We plan to segment the large policy document into smaller inline policies in the future release."
           - id: W11
             reason: "Allow Resource * for KMS/SSM API. KMS Service only support all resources. Key ID is generated by the service. SSM parameters are customer defined."
     Properties:
@@ -1295,26 +1496,29 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - !Join ['', ['arn:aws:logs:', !Ref 'AWS::Region', ':', !Ref 'AWS::AccountId',
-                      ':log-group:/aws/lambda/*']]
+                  - Fn::Sub: 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*'
               - Effect: Allow
                 Action:
                   - ssm:PutParameter
                   - ssm:GetParameter
                   - ssm:DeleteParameter
                   - ssm:GetParametersByPath
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*
+              - Effect: Allow
+                Action:
                   - ssm:DescribeParameters
                 Resource: '*'
               - Effect: Allow
                 Action:
-                  - "kms:Encrypt"
-                  - "kms:Decrypt"
-                  - "kms:ReEncryptFrom"
-                  - "kms:ReEncryptTo"
-                  - "kms:GenerateDataKey"
-                  - "kms:GenerateDataKeyWithoutPlaintext"
-                  - "kms:DescribeKey"
-                Resource: "*"
+                  - kms:Encrypt
+                  - kms:Decrypt
+                  - kms:ReEncryptFrom
+                  - kms:ReEncryptTo
+                  - kms:GenerateDataKey
+                  - kms:GenerateDataKeyWithoutPlaintext
+                  - kms:DescribeKey
+                Resource:
+                  - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
               - Effect: Allow
                 Action:
                   - xray:PutTraceSegments
@@ -1329,13 +1533,11 @@ Resources:
                   - s3:ListAllMyBuckets
                   - s3:PutBucketLogging
                   - s3:ListBucketVersions
-                  - s3:PutBucketPolicy
-                  - s3:CreateBucket
                   - s3:ListBucket
-                  - s3:GetBucketPolicy
                 Resource: '*'  # supports remotely sourced templates feature. The host S3 bucket can be created by the customer.
               - Effect: Allow
                 Action:
+                  - states:DescribeStateMachine
                   - states:ListExecutions
                   - states:StartExecution
                   - states:StopExecution
@@ -1349,10 +1551,17 @@ Resources:
                   - !Ref HandshakeStateMachine
               - Effect: Allow
                 Action:
-                  - states:DescribeStateMachine
                   - states:DescribeStateMachineForExecution
                   - states:DescribeExecution
-                Resource: '*'
+                Resource:
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${OrganizationsStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${ServiceControlPolicyMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${StackSetStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${ServiceCatalogStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${LaunchAVMStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${CheckAVMExistsStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${HandshakeStateMachine.Name}:*
+
               - Effect: Allow
                 Action:
                   - codepipeline:PutJobSuccessResult
@@ -1380,13 +1589,14 @@ Resources:
                   - cloudformation:ListStackInstances
                   - cloudformation:ListStackSetOperations
                 Resource: '*'
+
   StateMachineTriggerLambda:
     Type: AWS::Lambda::Function
     Properties:
       Environment:
         Variables:
           log_level: !FindInMap [LambdaFunction, Logging, Level]
-          kms_key_alias_name: !FindInMap [KMS, Alias, Name]
+          KMS_KEY_ALIAS_NAME: !FindInMap [KMS, Alias, Name]
           staging_bucket: !Ref LandingZonePipelineArtifactS3Bucket
           wait_time: "5"
           sm_arn_account: !Ref OrganizationsStateMachine
@@ -1400,16 +1610,17 @@ Resources:
           lambda_arn_param_name: !FindInMap [SSMParameterNames, LandingZoneLambdaParameterName, Name]
       Code:
         S3Bucket: !Sub "solutions-${AWS::Region}"
-        S3Key: aws-landing-zone/v2.3.1/aws-landing-zone-state-machine-trigger.zip
+        S3Key: aws-landing-zone/v2.4.0/aws-landing-zone-state-machine-trigger.zip
       FunctionName: LandingZoneStateMachineTriggerLambda
       Description: AWS Landing Zone State Machine Trigger
       Handler: state_machine_trigger.lambda_handler
       MemorySize: 3008
       Role: !GetAtt 'StateMachineTriggerLambdaRole.Arn'
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 900
       TracingConfig:
           Mode: Active
+
   StateMachineLambdaRole:
     Type: AWS::IAM::Role
     Metadata:
@@ -1417,6 +1628,8 @@ Resources:
         rules_to_suppress:
           - id: F38
             reason: "PassRole action is required to make changes to all (*) the Service Catalog Resources"
+          - id: W76
+            reason: "This is not a security concern. We plan to segment the large policy document into smaller inline policies in the future release."
           - id: W28
             reason: "The role name is defined to identify AWS Landing Zone resources."
           - id: W11
@@ -1442,16 +1655,9 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - !Join ['', ['arn:aws:logs:', !Ref 'AWS::Region', ':', !Ref 'AWS::AccountId',
-                      ':log-group:/aws/lambda/*']]
+                  - Fn::Sub: 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*'
               - Effect: Allow
                 Action:
-                  - iam:GetRole
-                Resource: '*'
-              - Effect: Allow
-                Action:
-                  - organizations:CreateOrganization
-                  - organizations:CreateOrganizationalUnit
                   - organizations:ListPolicies
                   - organizations:ListPoliciesForTarget
                   - organizations:ListTargetsForPolicy
@@ -1460,19 +1666,37 @@ Resources:
                   - organizations:ListAccounts
                   - organizations:ListOrganizationalUnitsForParent
                   - organizations:ListAccountsForParent
+                  - organizations:DescribeAccount
+                  - organizations:DescribeCreateAccountStatus
+                  - organizations:DescribeOrganization
                   - organizations:EnablePolicyType
+                  - organizations:CreateOrganization
+                  - organizations:CreateOrganizationalUnit
                   - organizations:CreatePolicy
                   - organizations:UpdatePolicy
                   - organizations:DeletePolicy
                   - organizations:DetachPolicy
                   - organizations:AttachPolicy
                   - organizations:CreateAccount
-                  - organizations:DescribeAccount
-                  - organizations:DescribeCreateAccountStatus
-                  - organizations:DescribeOrganization
                   - organizations:MoveAccount
                   - organizations:UpdateOrganizationalUnit
                   - organizations:DeleteOrganizationalUnit
+                Resource: '*' # The APIs above only support '*' resource.
+              - Effect: Allow
+                Action:
+                  - servicecatalog:DescribePortfolio
+                  - servicecatalog:DescribeProvisioningArtifact
+                  - servicecatalog:DescribeConstraint
+                  - servicecatalog:ListTagOptions
+                  - servicecatalog:ListResourcesForTagOption
+                  - servicecatalog:ListPortfoliosForProduct
+                  - servicecatalog:ListConstraintsForPortfolio
+                  - servicecatalog:ListProvisioningArtifacts
+                  - servicecatalog:ListPrincipalsForPortfolio
+                  - servicecatalog:ListPortfolios
+                  - servicecatalog:DescribeRecord
+                  - servicecatalog:DescribeProvisionedProduct
+                  - servicecatalog:SearchProvisionedProducts
                 Resource: '*'
               - Effect: Allow
                 Action:
@@ -1489,9 +1713,6 @@ Resources:
                   - servicecatalog:DeleteConstraint
                   - servicecatalog:DeletePortfolio
                   - servicecatalog:DeleteProduct
-                  - servicecatalog:DescribePortfolio
-                  - servicecatalog:DescribeProvisioningArtifact
-                  - servicecatalog:DescribeConstraint
                   - servicecatalog:AssociatePrincipalWithPortfolio
                   - servicecatalog:AssociateProductWithPortfolio
                   - servicecatalog:AssociateTagOptionWithResource
@@ -1499,19 +1720,12 @@ Resources:
                   - servicecatalog:DisassociateProductFromPortfolio
                   - servicecatalog:DisassociateTagOptionFromResource
                   - servicecatalog:DeleteProduct
-                  - servicecatalog:ListTagOptions
-                  - servicecatalog:ListResourcesForTagOption
-                  - servicecatalog:ListPortfoliosForProduct
-                  - servicecatalog:ListConstraintsForPortfolio
-                  - servicecatalog:ListProvisioningArtifacts
-                  - servicecatalog:ListPrincipalsForPortfolio
-                  - servicecatalog:ListPortfolios
-                  - servicecatalog:DescribeRecord
-                  - servicecatalog:DescribeProvisionedProduct
-                  - servicecatalog:SearchProvisionedProducts
                   - servicecatalog:UpdateProvisionedProduct
                   - servicecatalog:TerminateProvisionedProduct
-                Resource: '*'
+                Resource:
+                  - !Sub arn:aws:catalog:${AWS::Region}:${AWS::AccountId}:portfolio/*
+                  - !Sub arn:aws:catalog:${AWS::Region}:${AWS::AccountId}:product/*
+                  - !Sub arn:aws:servicecatalog:${AWS::Region}:${AWS::AccountId}:*/*
               - Effect: Allow
                 Action:
                   - servicecatalog:SearchProductsAsAdmin
@@ -1528,36 +1742,49 @@ Resources:
                   - cloudformation:DeleteStackSet
                   - cloudformation:CreateStackInstances
                   - cloudformation:DeleteStackInstances
+                  - cloudformation:UpdateStackSet
+                  - cloudformation:UpdateStackInstances
+                  - cloudformation:TagResource
+                Resource:
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stackset/*
+              - Effect: Allow
+                Action:
                   - cloudformation:DescribeStackInstance
                   - cloudformation:DescribeStackSetOperation
                   - cloudformation:DescribeStackSet
-                  - cloudformation:UpdateStackSet
-                  - cloudformation:UpdateStackInstances
-                  - cloudformation:ValidateTemplate
+
                   - cloudformation:TagResource
                   - cloudformation:ListStackInstances
                   - cloudformation:GetTemplateSummary
                   - cloudformation:DescribeStacks
-                Resource: '*'
+                Resource:
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stackset/*
               - Effect: Allow
                 Action:
                   - ssm:PutParameter
                   - ssm:GetParameter
                   - ssm:GetParameters
                   - ssm:DeleteParameter
-                  - ssm:DescribeParameters
                   - ssm:GetParametersByPath
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*
+              - Effect: Allow
+                Action:
+                  - ssm:DescribeParameters
+                  - cloudformation:ValidateTemplate
                 Resource: '*'
               - Effect: Allow
                 Action:
-                  - "kms:Encrypt"
-                  - "kms:Decrypt"
-                  - "kms:ReEncryptFrom"
-                  - "kms:ReEncryptTo"
-                  - "kms:GenerateDataKey"
-                  - "kms:GenerateDataKeyWithoutPlaintext"
-                  - "kms:DescribeKey"
-                Resource: "*"
+                  - kms:Encrypt
+                  - kms:Decrypt
+                  - kms:ReEncryptFrom
+                  - kms:ReEncryptTo
+                  - kms:GenerateDataKey
+                  - kms:GenerateDataKeyWithoutPlaintext
+                  - kms:DescribeKey
+                Resource:
+                  - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
               - Effect: Allow
                 Action:
                   - xray:PutTraceSegments
@@ -1572,6 +1799,7 @@ Resources:
                   - iam:GetServiceLinkedRoleDeletionStatus
                   - iam:GetGroup
                   - iam:PassRole
+                  - iam:GetRole
                 Resource: '*'
               - Effect: Allow
                 Action:
@@ -1582,10 +1810,7 @@ Resources:
                   - s3:ListAllMyBuckets
                   - s3:PutBucketLogging
                   - s3:ListBucketVersions
-                  - s3:PutBucketPolicy
-                  - s3:CreateBucket
                   - s3:ListBucket
-                  - s3:GetBucketPolicy
                 Resource: '*'
               - Effect: Allow
                 Action:
@@ -1598,8 +1823,6 @@ Resources:
                   - ec2:DeleteVpc
                   - ec2:DetachInternetGateway
                   - ec2:CreateKeyPair
-                  - ec2:DescribeSubnets
-                  - ec2:DescribeVpcs
                   - ec2:CreateSecurityGroup
                   - ec2:CreateNetworkInterface
                   - ec2:DescribeNetworkInterfaces
@@ -1626,18 +1849,20 @@ Resources:
       Environment:
         Variables:
           log_level: !FindInMap [LambdaFunction, Logging, Level]
-          kms_key_alias_name: !FindInMap [KMS, Alias, Name]
+          KMS_KEY_ALIAS_NAME: !FindInMap [KMS, Alias, Name]
+          MAX_CONCURRENT_PERCENT: !FindInMap [CloudFormationDeploymentOptions, Percentage, MaximumConcurrentAccounts]
+          FAILED_TOLERANCE_PERCENT: !FindInMap [CloudFormationDeploymentOptions, Percentage, FailureTolerance]
           ssm_key_for_lock_down_role_arns: lock_down_role_arns_list
           unlock_role_arns: !Sub arn:aws:iam::${AWS::AccountId}:root
       Code:
         S3Bucket: !Sub "solutions-${AWS::Region}"
-        S3Key: aws-landing-zone/v2.3.1/aws-landing-zone-state-machine.zip
+        S3Key: aws-landing-zone/v2.4.0/aws-landing-zone-state-machine.zip
       FunctionName: LandingZoneStateMachineLambda
       Description: AWS Landing Zone State Machine Handler
       Handler: state_machine_router.lambda_handler
       MemorySize: 1024
       Role: !GetAtt 'StateMachineLambdaRole.Arn'
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 300
       TracingConfig:
           Mode: Active
@@ -1672,8 +1897,7 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - !Join ['', ['arn:aws:logs:', !Ref 'AWS::Region', ':', !Ref 'AWS::AccountId',
-                      ':log-group:/aws/lambda/*']]
+                  - Fn::Sub: 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*'
               - Effect: Allow
                 Action:
                   - xray:PutTraceSegments
@@ -1713,24 +1937,29 @@ Resources:
                   - guardduty:DeleteMembers
                   - guardduty:DisassociateFromMasterAccount
                 Resource: '*'
+
               - Effect: Allow
                 Action:
                   - ssm:PutParameter
                   - ssm:GetParameter
                   - ssm:GetParameters
                   - ssm:DeleteParameter
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*
+              - Effect: Allow
+                Action:
                   - ssm:DescribeParameters
                 Resource: '*'
               - Effect: Allow
                 Action:
-                  - "kms:Encrypt"
-                  - "kms:Decrypt"
-                  - "kms:ReEncryptFrom"
-                  - "kms:ReEncryptTo"
-                  - "kms:GenerateDataKey"
-                  - "kms:GenerateDataKeyWithoutPlaintext"
-                  - "kms:DescribeKey"
-                Resource: "*"
+                  - kms:Encrypt
+                  - kms:Decrypt
+                  - kms:ReEncryptFrom
+                  - kms:ReEncryptTo
+                  - kms:GenerateDataKey
+                  - kms:GenerateDataKeyWithoutPlaintext
+                  - kms:DescribeKey
+                Resource:
+                  - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
               - Effect: Allow
                 Action:
                   - sts:AssumeRole
@@ -1744,13 +1973,13 @@ Resources:
           wait_time: '15'
       Code:
         S3Bucket: !Sub "solutions-${AWS::Region}"
-        S3Key: aws-landing-zone/v2.3.1/aws-landing-zone-handshake-state-machine.zip
+        S3Key: aws-landing-zone/v2.4.0/aws-landing-zone-handshake-state-machine.zip
       Description: AWS Lambda-backed Custom Resources for Handshake Mechanism
       FunctionName: LandingZoneHandshakeSMLambda
       Handler: handshake_sm_router.lambda_handler
       MemorySize: 1024
       Role: !GetAtt 'HandshakeSMLambdaRole.Arn'
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 660
       TracingConfig:
         Mode: Active
@@ -1812,6 +2041,8 @@ Resources:
         rules_to_suppress:
           - id: W28
             reason: "The role name is defined to identify AWS Landing Zone resources."
+          - id: W76
+            reason: "This is not a security concern. We plan to segment the large policy document into smaller inline policies in the future release."
           - id: W11
             reason: "Allow Resource * for KMS/EC2 API. KMS Key ID is generated by the service. SSM parameters and EC2 resources are customer defined."
     Properties:
@@ -1835,8 +2066,7 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - !Join ['', ['arn:aws:logs:', !Ref 'AWS::Region', ':', !Ref 'AWS::AccountId',
-                      ':log-group:/aws/lambda/*']]
+                  - Fn::Sub: 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*'
               - Effect: Allow
                 Action:
                   - xray:PutTraceSegments
@@ -1845,12 +2075,29 @@ Resources:
               - Effect: Allow
                 Action:
                   - states:DescribeStateMachine
-                  - states:DescribeStateMachineForExecution
-                  - states:DescribeExecution
                   - states:ListExecutions
                   - states:StartExecution
                   - states:StopExecution
-                Resource: '*'
+                Resource:
+                  - !Ref OrganizationsStateMachine
+                  - !Ref ServiceControlPolicyMachine
+                  - !Ref StackSetStateMachine
+                  - !Ref ServiceCatalogStateMachine
+                  - !Ref LaunchAVMStateMachine
+                  - !Ref CheckAVMExistsStateMachine
+                  - !Ref HandshakeStateMachine
+              - Effect: Allow
+                Action:
+                  - states:DescribeStateMachineForExecution
+                  - states:DescribeExecution
+                Resource:
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${OrganizationsStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${ServiceControlPolicyMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${StackSetStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${ServiceCatalogStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${LaunchAVMStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${CheckAVMExistsStateMachine.Name}:*
+                  - !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${HandshakeStateMachine.Name}:*
               - Effect: Allow
                 Action:
                   - ec2:DescribeInternetGateways
@@ -1877,28 +2124,34 @@ Resources:
                   - ssm:GetParameter
                   - ssm:GetParameters
                   - ssm:DeleteParameter
-                Resource: '*'
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*
               - Effect: Allow
                 Action:
-                  - "kms:Encrypt"
-                  - "kms:Decrypt"
-                  - "kms:ReEncryptFrom"
-                  - "kms:ReEncryptTo"
-                  - "kms:GenerateDataKey"
-                  - "kms:GenerateDataKeyWithoutPlaintext"
-                  - "kms:DescribeKey"
-                Resource: "*"
+                  - ssm:DescribeParameters
+                Resource: '*' # The APIs above only support '*' resource.
+              - Effect: Allow
+                Action:
+                  - kms:Encrypt
+                  - kms:Decrypt
+                  - kms:ReEncryptFrom
+                  - kms:ReEncryptTo
+                  - kms:GenerateDataKey
+                  - kms:GenerateDataKeyWithoutPlaintext
+                  - kms:DescribeKey
+                Resource:
+                  - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
               - Effect: Allow
                 Action:
                   - sts:AssumeRole
                 Resource: 'arn:aws:iam::*:role/AWSCloudFormationStackSetExecutionRole'
+
   LandingZoneLambda:
     Type: AWS::Lambda::Function
     Properties:
       Environment:
         Variables:
           log_level: !FindInMap [LambdaFunction, Logging, Level]
-          kms_key_alias_name: !FindInMap [KMS, Alias, Name]
+          KMS_KEY_ALIAS_NAME: !FindInMap [KMS, Alias, Name]
           sm_arn_account: !Ref OrganizationsStateMachine
           sm_arn_stack_set: !Ref StackSetStateMachine
           sm_arn_service_control_policy: !Ref ServiceControlPolicyMachine
@@ -1909,13 +2162,13 @@ Resources:
           sm_arn_handshake_sm: !Ref HandshakeStateMachine
       Code:
         S3Bucket: !Sub "solutions-${AWS::Region}"
-        S3Key: aws-landing-zone/v2.3.1/aws-landing-zone-avm-cr.zip
+        S3Key: aws-landing-zone/v2.4.0/aws-landing-zone-avm-cr.zip
       Description: AWS Lambda-backed Custom Resources for AVM
       FunctionName: LandingZone
       Handler: lambda_custom_resource.lambda_handler
       MemorySize: 1024
       Role: !GetAtt 'LandingZoneLambdaRole.Arn'
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 300
       TracingConfig:
           Mode: Active
@@ -1945,7 +2198,6 @@ Resources:
         - !Ref VPCOptions
         - CreateAdditionalPrivateSubnets
       ServiceToken: !GetAtt LandingZoneLambda.Arn
-
 
   LandingZoneLambdaParameter:
     DependsOn:
@@ -2473,6 +2725,7 @@ Resources:
               }
             }
           }
+
 
   ServiceControlPolicyMachine:
     Type: 'AWS::StepFunctions::StateMachine'
@@ -3040,6 +3293,7 @@ Resources:
               }
             }
           }
+
   StackSetStateMachine:
     Type: 'AWS::StepFunctions::StateMachine'
     Properties:
@@ -3130,7 +3384,7 @@ Resources:
                   {
                     "Variable": "$.StackSetExist",
                     "StringEquals": "yes",
-                    "Next": "List StackInstances Accounts Pass"
+                    "Next": "Update StackSet Pass"
                   }
                 ],
                 "Default": "Unable to describe StackSet"
@@ -3319,39 +3573,6 @@ Resources:
               "Create Task Failed": {
                 "Type": "Pass",
                 "Next": "Send Failed Pass"
-              },
-              "List StackInstances Accounts Pass": {
-                "Type": "Pass",
-                "Result": {
-                  "ClassName": "CloudFormation",
-                  "FunctionName": "list_stack_instances_account_ids"
-                },
-                "ResultPath": "$.params",
-                "Next": "List StackInstances Accounts"
-              },
-              "List StackInstances Accounts": {
-                "Type": "Task",
-                "Resource": "${StateMachineLambda.Arn}",
-                "TimeoutSeconds": 300,
-                "HeartbeatSeconds": 60,
-                "InputPath": "$",
-                "Next": "Check List StackInstances Accounts Complete?"
-              },
-              "Check List StackInstances Accounts Complete?": {
-                "Type": "Choice",
-                "Choices": [
-                  {
-                    "Variable": "$.NextToken",
-                    "StringEquals": "Complete",
-                    "Next": "Update StackSet Pass"
-                  }
-                ],
-                "Default": "Check List StackInstances Accounts Wait"
-              },
-              "Check List StackInstances Accounts Wait": {
-                "Type": "Wait",
-                "Seconds": 5,
-                "Next": "List StackInstances Accounts"
               },
               "Update StackSet Pass": {
                 "Type": "Pass",
@@ -4001,6 +4222,7 @@ Resources:
             }
           }
 
+
   ServiceCatalogStateMachine:
     Type: 'AWS::StepFunctions::StateMachine'
     Properties:
@@ -4075,12 +4297,12 @@ Resources:
                 "Choices": [
                   {
                     "Variable": "$.PortfolioExist",
-                    "StringEquals": "no",
+                    "BooleanEquals": false,
                     "Next": "Create Portfolio Pass"
                   },
                   {
                     "Variable": "$.PortfolioExist",
-                    "StringEquals": "yes",
+                    "BooleanEquals": true,
                     "Next": "Update Portfolio Pass"
                   }
                 ],
@@ -4160,12 +4382,12 @@ Resources:
                 "Choices": [
                   {
                     "Variable": "$.ProductExist",
-                    "StringEquals": "no",
+                    "BooleanEquals": false,
                     "Next": "Create Product Pass"
                   },
                   {
                     "Variable": "$.ProductExist",
-                    "StringEquals": "yes",
+                    "BooleanEquals": true,
                     "Next": "Update Product Pass"
                   }
                 ],
@@ -4690,7 +4912,7 @@ Resources:
                 "Choices": [
                   {
                     "Variable": "$.PortfolioExist",
-                    "StringEquals": "yes",
+                    "BooleanEquals": true,
                     "Next": "Does Constraint Exist?"
                   }
                 ],
@@ -4755,7 +4977,7 @@ Resources:
                 "Choices": [
                   {
                     "Variable": "$.ProductExist",
-                    "StringEquals": "yes",
+                    "BooleanEquals": true,
                     "Next": "Delete Product Pass"
                   }
                 ],
@@ -4823,6 +5045,8 @@ Resources:
             }
           }
 
+
+
   LaunchAVMStateMachine:
     Type: 'AWS::StepFunctions::StateMachine'
     Properties:
@@ -4848,38 +5072,6 @@ Resources:
                 "Resource": "${StateMachineLambda.Arn}",
                 "TimeoutSeconds": 300,
                 "HeartbeatSeconds": 60,
-                "Next": "Lookup Service Catalog Product Pass"
-              },
-              "Lookup Service Catalog Product Pass": {
-                "Type": "Pass",
-                "Result": {
-                  "ClassName": "LaunchAVM",
-                  "FunctionName": "lookup_product"
-                },
-                "ResultPath": "$.params",
-                "Next": "Lookup Service Catalog Product"
-              },
-              "Lookup Service Catalog Product": {
-                "Type": "Task",
-                "Resource": "${StateMachineLambda.Arn}",
-                "TimeoutSeconds": 300,
-                "HeartbeatSeconds": 60,
-                "Next": "ConfigureCount Pass"
-              },
-              "ConfigureCount Pass": {
-                "Type": "Pass",
-                "Result": {
-                  "ClassName": "LaunchAVM",
-                  "FunctionName": "configure_count"
-                },
-                "ResultPath": "$.params",
-                "Next": "ConfigureCount"
-              },
-              "ConfigureCount": {
-                "Type": "Task",
-                "Resource": "${StateMachineLambda.Arn}",
-                "TimeoutSeconds": 300,
-                "HeartbeatSeconds": 60,
                 "Next": "Iterator Pass"
               },
               "Iterator Pass": {
@@ -4892,106 +5084,76 @@ Resources:
                 "Next": "Iterator"
               },
               "Iterator": {
-                  "Type": "Task",
-                  "Resource": "${StateMachineLambda.Arn}",
-                  "Next": "IsCountReached"
+                "Type": "Task",
+                "Resource": "${StateMachineLambda.Arn}",
+                "Next": "IsCountReached"
               },
               "IsCountReached": {
-                  "Type": "Choice",
-                  "Choices": [
-                      {
-                          "Variable": "$.Continue",
-                          "BooleanEquals": true,
-                          "Next": "Search Provisioned Product Pass"
-                      }
-                  ],
-                  "Default": "Send Success Pass"
-              },
-              "Search Provisioned Product Pass": {
-                "Type": "Pass",
-                "Result": {
-                  "ClassName": "LaunchAVM",
-                  "FunctionName": "search_provisioned_products"
-                },
-                "ResultPath": "$.params",
-                "Next": "Search Provisioned Product"
-              },
-              "Search Provisioned Product": {
-                  "Type": "Task",
-                  "Resource": "${StateMachineLambda.Arn}",
-                  "Next": "Search Complete?"
-              },
-              "Search Complete?": {
                 "Type": "Choice",
                 "Choices": [
                   {
-                    "Variable": "$.NextPageToken",
-                    "StringEquals": "Complete",
+                    "Variable": "$.Continue",
+                    "BooleanEquals": true,
                     "Next": "Does Provisioned Product Exist?"
                   }
                 ],
-                "Default": "Search Provisioned Product Account Wait"
-              },
-              "Search Provisioned Product Account Wait": {
-                "Type": "Wait",
-                "Seconds": 1,
-                "Next": "Search Provisioned Product Pass"
+                "Default": "Send Success Pass"
               },
               "Does Provisioned Product Exist?": {
-                  "Type": "Choice",
-                  "Choices": [
-                    {
-                      "And": [
-                        {
-                            "Variable": "$.ProvisionedProductExists",
-                            "BooleanEquals": true
-                        },
-                        {
-                          "Variable": "$.RequestType",
-                          "StringEquals": "Create"
-                        }
-                      ],
-                      "Next": "Update Provisioned Product Pass"
-                    },
-                    {
-                      "And": [
-                        {
-                            "Variable": "$.ProvisionedProductExists",
-                            "BooleanEquals": true
-                        },
-                        {
-                          "Variable": "$.RequestType",
-                          "StringEquals": "Delete"
-                        }
-                      ],
-                      "Next": "Terminate Provisioned Product Pass"
-                    },
-                    {
-                      "And": [
-                        {
-                            "Variable": "$.ProvisionedProductExists",
-                            "BooleanEquals": false
-                        },
-                        {
-                          "Variable": "$.RequestType",
-                          "StringEquals": "Create"
-                        }
-                      ],
-                      "Next": "Launch Product Pass"
-                    },
-                    {
-                      "And": [
-                        {
-                            "Variable": "$.ProvisionedProductExists",
-                            "BooleanEquals": false
-                        },
-                        {
-                          "Variable": "$.RequestType",
-                          "StringEquals": "Delete"
-                        }
-                      ],
-                      "Next": "Iterator Pass"
-                    }
+                "Type": "Choice",
+                "Choices": [
+                  {
+                    "And": [
+                      {
+                        "Variable": "$.ProvisionedProductExists",
+                        "BooleanEquals": true
+                      },
+                      {
+                        "Variable": "$.RequestType",
+                        "StringEquals": "Create"
+                      }
+                    ],
+                    "Next": "Update Provisioned Product Pass"
+                  },
+                  {
+                    "And": [
+                      {
+                        "Variable": "$.ProvisionedProductExists",
+                        "BooleanEquals": true
+                      },
+                      {
+                        "Variable": "$.RequestType",
+                        "StringEquals": "Delete"
+                      }
+                    ],
+                    "Next": "Terminate Provisioned Product Pass"
+                  },
+                  {
+                    "And": [
+                      {
+                        "Variable": "$.ProvisionedProductExists",
+                        "BooleanEquals": false
+                      },
+                      {
+                        "Variable": "$.RequestType",
+                        "StringEquals": "Create"
+                      }
+                    ],
+                    "Next": "Launch Product Pass"
+                  },
+                  {
+                    "And": [
+                      {
+                        "Variable": "$.ProvisionedProductExists",
+                        "BooleanEquals": false
+                      },
+                      {
+                        "Variable": "$.RequestType",
+                        "StringEquals": "Delete"
+                      }
+                    ],
+                    "Next": "Iterator Pass"
+                  }
                 ]
               },
               "Update Provisioned Product Pass": {
@@ -5004,9 +5166,9 @@ Resources:
                 "Next": "Update Provisioned Product"
               },
               "Update Provisioned Product": {
-                  "Type": "Task",
-                  "Resource": "${StateMachineLambda.Arn}",
-                  "Next": "Describe Provisioned Product Pass"
+                "Type": "Task",
+                "Resource": "${StateMachineLambda.Arn}",
+                "Next": "Describe Provisioned Product Pass"
               },
               "Terminate Provisioned Product Pass": {
                 "Type": "Pass",
@@ -5018,9 +5180,9 @@ Resources:
                 "Next": "Terminate Provisioned Product"
               },
               "Terminate Provisioned Product": {
-                  "Type": "Task",
-                  "Resource": "${StateMachineLambda.Arn}",
-                  "Next": "Describe Provisioned Product Pass"
+                "Type": "Task",
+                "Resource": "${StateMachineLambda.Arn}",
+                "Next": "Describe Provisioned Product Pass"
               },
               "Launch Product Pass": {
                 "Type": "Pass",
@@ -5032,9 +5194,9 @@ Resources:
                 "Next": "Launch Product"
               },
               "Launch Product": {
-                  "Type": "Task",
-                  "Resource": "${StateMachineLambda.Arn}",
-                  "Next": "Describe Provisioned Product Pass"
+                "Type": "Task",
+                "Resource": "${StateMachineLambda.Arn}",
+                "Next": "Describe Provisioned Product Pass"
               },
               "Describe Provisioned Product Pass": {
                 "Type": "Pass",
@@ -5046,30 +5208,30 @@ Resources:
                 "Next": "Describe Provisioned Product"
               },
               "Describe Provisioned Product": {
-                  "Type": "Task",
-                  "Resource": "${StateMachineLambda.Arn}",
-                  "Next": "Is Product Provisioned Or Terminated successfully?"
+                "Type": "Task",
+                "Resource": "${StateMachineLambda.Arn}",
+                "Next": "Is Product Provisioned Or Terminated successfully?"
               },
               "Is Product Provisioned Or Terminated successfully?": {
-                  "Type": "Choice",
-                  "Choices": [
-                    {
-                      "Variable": "$.ProvisioningStatus",
-                      "StringEquals": "FAILED",
-                      "Next": "Send Failed Pass"
-                    },
-                    {
-                      "Variable": "$.ProvisioningStatus",
-                      "StringEquals": "SUCCEEDED",
-                      "Next": "Iterator Pass"
-                    },
-                    {
-                      "Variable": "$.ProvisioningStatus",
-                      "StringEquals": "RETRY",
-                      "Next": "Random Wait Pass"
-                    }
-                  ],
-                  "Default": "Wait For Product To Provision"
+                "Type": "Choice",
+                "Choices": [
+                  {
+                    "Variable": "$.ProvisioningStatus",
+                    "StringEquals": "FAILED",
+                    "Next": "Send Failed Pass"
+                  },
+                  {
+                    "Variable": "$.ProvisioningStatus",
+                    "StringEquals": "SUCCEEDED",
+                    "Next": "Iterator Pass"
+                  },
+                  {
+                    "Variable": "$.ProvisioningStatus",
+                    "StringEquals": "RETRY",
+                    "Next": "Random Wait Pass"
+                  }
+                ],
+                "Default": "Wait For Product To Provision"
               },
               "Random Wait Pass": {
                 "Type": "Pass",
@@ -5132,6 +5294,9 @@ Resources:
               }
             }
           }
+
+
+
   CheckAVMExistsStateMachine:
     Type: 'AWS::StepFunctions::StateMachine'
     Properties:
@@ -5280,6 +5445,7 @@ Resources:
               }
             }
           }
+
 
   HandshakeStateMachine:
     Type: 'AWS::StepFunctions::StateMachine'
@@ -5640,8 +5806,7 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - !Join ['', ['arn:aws:logs:', !Ref 'AWS::Region', ':', !Ref 'AWS::AccountId',
-                      ':log-group:/aws/lambda/*']]
+                  - Fn::Sub: 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*'
               - Effect: Allow
                 Action:
                   - cloudformation:GetTemplateSummary
@@ -5692,11 +5857,11 @@ Resources:
           AddonTemplate: !FindInMap [Solution, Data, "AddonTemplate"]
           AddonStack: !Sub ${AWS::StackId}
           AddonTopic: !If [IsAddonsManagedCondition, !Ref AddonSNSTopic, '']
-          ReleaseNotes: https://solutions-reference.s3.amazonaws.com/aws-landing-zone/v2.3.1/release_notes.html
+          ReleaseNotes: https://solutions-reference.s3.amazonaws.com/aws-landing-zone/v2.4.0/release_notes.html
           log_level: !FindInMap [LambdaFunction, Logging, Level]
       Code:
         S3Bucket: !Sub "solutions-${AWS::Region}"
-        S3Key: aws-landing-zone/v2.3.1/aws-landing-zone-addon-publisher.zip
+        S3Key: aws-landing-zone/v2.4.0/aws-landing-zone-addon-publisher.zip
       FunctionName: LandingZoneAddonPublisher
       Handler: publish.lambda_handler
       Runtime: python3.7
@@ -5739,7 +5904,7 @@ Resources:
       Description: Install the centralized log aggregation and monitoring solution
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.3.1/add-on/aws-centralized-logging-solution.template
+            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.4.0/add-on/aws-centralized-logging-solution.template
           Name: v1.2
           Description: Updated Node.js runtime to 12.x
 
@@ -5768,7 +5933,7 @@ Resources:
       Description: This AWS Landing Zone add-on will deploy Directory Connector for AWS SSO peered with AWS Managed Active Directory and a Remote Desktop Gateway in the shared service account. Use this add-on to provide an AWS managed AD infrastructure for controlling user access to AWS and your EC2 instances.
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.3.1/add-on/aws-ad-with-rdgw-ad-connector.template
+            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.4.0/add-on/aws-ad-with-rdgw-ad-connector.template
           Name: v1.3
           Description: This version corrects an issue impacting pipeline execution during add-on installation.
 
@@ -5797,7 +5962,7 @@ Outputs:
     Value: !Ref LandingZonePipelineS3Bucket
   LandingZoneSolutionVersion:
     Description: Version Number
-    Value: "v2.3.1"
+    Value: "v2.4.0"
     Export:
       Name: AWS-Landing-Zone-Version
   LandingZoneAddonsVersion:
