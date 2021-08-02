@@ -5,7 +5,7 @@
 <p align="center"><img src="https://i.imgur.com/6LpCoGM.png" /></p>
 
 ## 📚Refrence :
- - [Release Notes](https://solutions-reference.s3.amazonaws.com/aws-landing-zone/v2.4.2/release_notes.html)
+ - [Release Notes](https://solutions-reference.s3.amazonaws.com/aws-landing-zone/v2.4.3/release_notes.html)
  - [Implementation Guide](http://www.awslandingzone.com/guides/aws-landing-zone-implementation-guide.pdf)
  - [Developers Guide](http://www.awslandingzone.com/guides/aws-landing-zone-developer-guide.pdf)
  - [User Guide](http://www.awslandingzone.com/guides/aws-landing-zone-user-guide.pdf)
