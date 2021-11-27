@@ -12,7 +12,7 @@
 #  limitations under the License.      
 #
 AWSTemplateFormatVersion: '2010-09-09'
-Description: '(SO0044) - AWS Landing Zone Version v2.4.3, AddOns Version aov1.0'
+Description: '(SO0044) - AWS Landing Zone Version v2.4.4, AddOns Version aov1.0'
 
 Parameters:
   SharedServicesAccountEmail:
@@ -373,7 +373,7 @@ Mappings:
     SourceBucketName:
       Name: "solutions-reference"
     SourceKeyName:
-      Name: aws-landing-zone/v2.4.3/aws-landing-zone-configuration.zip
+      Name: aws-landing-zone/v2.4.4/aws-landing-zone-configuration.zip
     LandingZonePipelineS3TriggerKey:
       Name: aws-landing-zone-configuration.zip
     LandingZonePipelineS3NonTriggerKey:
@@ -414,7 +414,7 @@ Mappings:
       SolutionID: 'SO0044'
       MetricsURL: 'https://metrics.awssolutionsbuilder.com/generic'
     Data:
-      AddonTemplate: 'https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.4.3/aws-landing-zone-initiation.template'
+      AddonTemplate: 'https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.4.4/aws-landing-zone-initiation.template'
   LambdaFunction:
     Logging:
       Level: 'info'
@@ -1018,7 +1018,7 @@ Resources:
           EncryptionKey: !Join ["/", ["alias", !FindInMap [KMS, Alias, Name]]]
           Source:
               Type: CODEPIPELINE
-              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n      ruby: 2.6\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python3-pip libyaml-dev rsync -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv==20.0.35\n      - pip install --upgrade PyYAML==5.3.1\n      - pip install --upgrade yorm==1.6.2\n      - pip install --upgrade jinja2==2.11.2\n      - pip install --upgrade pyyaml==5.3.1\n      - pip install --upgrade pykwalify==1.7.0\n      - pip install cfn_flip==1.2.3\n      - pip freeze\n      - ruby -v\n      - gem -v\n      - gem install cfn-nag -v 0.3.64\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Validation scripts'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.4.3/aws-landing-zone-validation.zip $current\n      - unzip -o $current/aws-landing-zone-validation.zip -d $current\n      - cp bin/lz_scripts/* .\n  build:\n    commands:\n      - echo 'Starting build `date` in `pwd`'\n      - echo 'bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY $NONE_TYPE_VALUES $BOOL_VALUES'\n      - bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY $NONE_TYPE_VALUES $BOOL_VALUES\n      - echo 'Executing validation tests'\n      - echo 'bash $current/validation/run-validation.sh $ARTIFACT_BUCKET'\n      - bash $current/validation/run-validation.sh $ARTIFACT_BUCKET\n      - echo 'Installing validation tests completed `date`'\n      - echo 'Source Dist completed `date`'\n  post_build:\n    commands:\n      - echo 'Starting post build `date` in `pwd`'\n      - echo 'build completed on `date`'\n      - echo 'Printing Merge Report'\n      - cat merge_report.txt\nartifacts:\n  files:\n      - '**/*'\n"
+              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n      ruby: 2.6\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python3-pip libyaml-dev rsync -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv==20.0.35\n      - pip install --upgrade PyYAML==5.3.1\n      - pip install --upgrade yorm==1.6.2\n      - pip install --upgrade jinja2==2.11.2\n      - pip install --upgrade pyyaml==5.3.1\n      - pip install --upgrade pykwalify==1.7.0\n      - pip install cfn_flip==1.2.3\n      - pip freeze\n      - ruby -v\n      - gem -v\n      - gem install cfn-nag -v 0.3.64\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Validation scripts'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.4.4/aws-landing-zone-validation.zip $current\n      - unzip -o $current/aws-landing-zone-validation.zip -d $current\n      - cp bin/lz_scripts/* .\n  build:\n    commands:\n      - echo 'Starting build `date` in `pwd`'\n      - echo 'bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY $NONE_TYPE_VALUES $BOOL_VALUES'\n      - bash merge_directories.sh $LAMBDA_ARN_SSM_PS_KEY $NONE_TYPE_VALUES $BOOL_VALUES\n      - echo 'Executing validation tests'\n      - echo 'bash $current/validation/run-validation.sh $ARTIFACT_BUCKET'\n      - bash $current/validation/run-validation.sh $ARTIFACT_BUCKET\n      - echo 'Installing validation tests completed `date`'\n      - echo 'Source Dist completed `date`'\n  post_build:\n    commands:\n      - echo 'Starting post build `date` in `pwd`'\n      - echo 'build completed on `date`'\n      - echo 'Printing Merge Report'\n      - cat merge_report.txt\nartifacts:\n  files:\n      - '**/*'\n"
           Environment:
               ComputeType: BUILD_GENERAL1_SMALL
               Image: "aws/codebuild/standard:5.0"
@@ -1035,7 +1035,7 @@ Resources:
                   - Name: SOLUTION_ID
                     Value: !FindInMap [ Solution, Metrics, SolutionID ]
                   - Name: SOLUTION_VERSION
-                    Value: v2.4.3
+                    Value: v2.4.4
                   - Name: METRICS_URL
                     Value: !FindInMap [ Solution, Metrics, MetricsURL ]
           Artifacts:
@@ -1239,7 +1239,7 @@ Resources:
           EncryptionKey: !Join ["/", ["alias", !FindInMap [KMS, Alias, Name]]]
           Source:
               Type: CODEPIPELINE
-              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python3-pip libyaml-dev -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv==20.0.35\n      - pip install --upgrade PyYAML==5.3.1\n      - pip install --upgrade yorm==1.6.2\n      - pip install --upgrade pyyaml==5.3.1\n      - pip freeze\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Baseline Resource Deployments Code'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.4.3/aws-landing-zone-baseline-resource.zip $current\n      - unzip -o $current/aws-landing-zone-baseline-resource.zip -d $current\n  build:\n    commands:\n      - echo 'Starting Baseline Resource Deployments `date` in `pwd`'\n      - echo 'python3 launch_baseline_resources.py $LOG_LEVEL $WAIT_TIME $current/manifest.yaml $SM_ARN_STACK_SET $ARTIFACT_BUCKET $STAGE_NAME $KMS_KEY_ALIAS_NAME'\n      - python3 launch_baseline_resources.py $LOG_LEVEL $WAIT_TIME $current/manifest.yaml $SM_ARN_STACK_SET $ARTIFACT_BUCKET $STAGE_NAME $KMS_KEY_ALIAS_NAME\n      - echo 'Completed Baseline Resource Deployments `date` in `pwd`'\nartifacts:\n  files:\n      - '**/*'\n"
+              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python3-pip libyaml-dev -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv==20.0.35\n      - pip install --upgrade PyYAML==5.3.1\n      - pip install --upgrade yorm==1.6.2\n      - pip install --upgrade pyyaml==5.3.1\n      - pip freeze\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Baseline Resource Deployments Code'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.4.4/aws-landing-zone-baseline-resource.zip $current\n      - unzip -o $current/aws-landing-zone-baseline-resource.zip -d $current\n  build:\n    commands:\n      - echo 'Starting Baseline Resource Deployments `date` in `pwd`'\n      - echo 'python3 launch_baseline_resources.py $LOG_LEVEL $WAIT_TIME $current/manifest.yaml $SM_ARN_STACK_SET $ARTIFACT_BUCKET $STAGE_NAME $KMS_KEY_ALIAS_NAME'\n      - python3 launch_baseline_resources.py $LOG_LEVEL $WAIT_TIME $current/manifest.yaml $SM_ARN_STACK_SET $ARTIFACT_BUCKET $STAGE_NAME $KMS_KEY_ALIAS_NAME\n      - echo 'Completed Baseline Resource Deployments `date` in `pwd`'\nartifacts:\n  files:\n      - '**/*'\n"
           Environment:
               ComputeType: BUILD_GENERAL1_SMALL
               Image: "aws/codebuild/standard:5.0"
@@ -1260,9 +1260,13 @@ Resources:
                   - Name: SOLUTION_ID
                     Value: !FindInMap [ Solution, Metrics, SolutionID ]
                   - Name: SOLUTION_VERSION
-                    Value: v2.4.3
+                    Value: v2.4.4
                   - Name: METRICS_URL
                     Value: !FindInMap [ Solution, Metrics, MetricsURL ]
+                  - Name: SSM_KEY_FOR_LOCK_DOWN_ROLE_ARNS
+                    Value: lock_down_role_arns_list
+                  - Name: UNLOCK_ROLE_ARNS
+                    Value: !Sub arn:aws:iam::${AWS::AccountId}:root
           Artifacts:
               Name: !Sub ${LandingZonePipelineArtifactS3Bucket}-Built
               Type: CODEPIPELINE
@@ -1277,7 +1281,7 @@ Resources:
           EncryptionKey: !Join ["/", ["alias", !FindInMap [KMS, Alias, Name]]]
           Source:
               Type: CODEPIPELINE
-              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python3-pip libyaml-dev -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv==20.0.35\n      - pip install --upgrade PyYAML==5.3.1\n      - pip install --upgrade yorm==1.6.2\n      - pip install --upgrade pyyaml==5.3.1\n      - pip freeze\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Launch AVM Code'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.4.3/aws-landing-zone-launch-avm.zip $current\n      - unzip -o $current/aws-landing-zone-launch-avm.zip -d $current\n  build:\n    commands:\n      - echo 'Starting Launch AVM `date` in `pwd`'\n      - echo 'python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm $batch_size'\n      - python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm $batch_size\n      - echo 'Completed Launch AVM `date` in `pwd`'\nartifacts:\n  files:\n      - '**/*'\n"
+              BuildSpec: "version: 0.2\nphases:\n  install:\n    runtime-versions:\n      python: 3.7\n    commands:\n      - export current=`pwd`\n      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;	else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;	fi; fi;\n      - apt-get update && apt-get upgrade -y\n      - apt-get install zip wget python3-pip libyaml-dev -y\n      - which python && python --version\n      - which python3 && python3 --version\n      - which pip && pip --version\n      - pip install --upgrade pip==18.0\n      - pip install --upgrade setuptools\n      - pip install --upgrade virtualenv==20.0.35\n      - pip install --upgrade PyYAML==5.3.1\n      - pip install --upgrade yorm==1.6.2\n      - pip install --upgrade pyyaml==5.3.1\n      - pip freeze\n  pre_build:\n    commands:\n      - cd $current\n      - echo 'Download the Launch AVM Code'\n      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.4.4/aws-landing-zone-launch-avm.zip $current\n      - unzip -o $current/aws-landing-zone-launch-avm.zip -d $current\n  build:\n    commands:\n      - echo 'Starting Launch AVM `date` in `pwd`'\n      - echo 'python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm $batch_size'\n      - python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm $batch_size\n      - echo 'Completed Launch AVM `date` in `pwd`'\nartifacts:\n  files:\n      - '**/*'\n"
           Environment:
               ComputeType: BUILD_GENERAL1_SMALL
               Image: "aws/codebuild/standard:5.0"
@@ -1294,14 +1298,9 @@ Resources:
                   - Name: SOLUTION_ID
                     Value: !FindInMap [ Solution, Metrics, SolutionID ]
                   - Name: SOLUTION_VERSION
-                    Value: v2.4.3
+                    Value: v2.4.4
                   - Name: METRICS_URL
                     Value: !FindInMap [ Solution, Metrics, MetricsURL ]
-                  - Name: SSM_KEY_FOR_LOCK_DOWN_ROLE_ARNS
-                    Value: lock_down_role_arns_list
-                  - Name: UNLOCK_ROLE_ARNS
-                    Value: !Sub arn:aws:iam::${AWS::AccountId}:root
-
           Artifacts:
               Name: !Sub ${LandingZonePipelineArtifactS3Bucket}-Built
               Type: CODEPIPELINE
@@ -1406,11 +1405,11 @@ Resources:
           log_level: !FindInMap [LambdaFunction, Logging, Level]
           KMS_KEY_ALIAS_NAME: !FindInMap [KMS, Alias, Name]
           SOLUTION_ID: !FindInMap [ Solution, Metrics, SolutionID ]
-          SOLUTION_VERSION: v2.4.3
+          SOLUTION_VERSION: v2.4.4
           METRICS_URL: !FindInMap [Solution, Metrics, MetricsURL]
       Code:
         S3Bucket: !Sub "solutions-${AWS::Region}"
-        S3Key: aws-landing-zone/v2.4.3/aws-landing-zone-config-deployer.zip
+        S3Key: aws-landing-zone/v2.4.4/aws-landing-zone-config-deployer.zip
       FunctionName: LandingZoneDeploymentLambda
       Description: AWS Landing Zone Deployment Lambda
       Handler: config_deployer.lambda_handler
@@ -1686,11 +1685,11 @@ Resources:
           sm_arn_handshake_sm: !Ref HandshakeStateMachine
           lambda_arn_param_name: !FindInMap [SSMParameterNames, LandingZoneLambdaParameterName, Name]
           SOLUTION_ID: !FindInMap [ Solution, Metrics, SolutionID ]
-          SOLUTION_VERSION: v2.4.3
+          SOLUTION_VERSION: v2.4.4
           METRICS_URL: !FindInMap [ Solution, Metrics, MetricsURL ]
       Code:
         S3Bucket: !Sub "solutions-${AWS::Region}"
-        S3Key: aws-landing-zone/v2.4.3/aws-landing-zone-state-machine-trigger.zip
+        S3Key: aws-landing-zone/v2.4.4/aws-landing-zone-state-machine-trigger.zip
       FunctionName: LandingZoneStateMachineTriggerLambda
       Description: AWS Landing Zone State Machine Trigger
       Handler: state_machine_trigger.lambda_handler
@@ -1943,11 +1942,11 @@ Resources:
           SSM_KEY_FOR_LOCK_DOWN_ROLE_ARNS: lock_down_role_arns_list
           UNLOCK_ROLE_ARNS: !Sub arn:aws:iam::${AWS::AccountId}:root
           SOLUTION_ID: !FindInMap [ Solution, Metrics, SolutionID ]
-          SOLUTION_VERSION: v2.4.3
+          SOLUTION_VERSION: v2.4.4
           METRICS_URL: !FindInMap [ Solution, Metrics, MetricsURL ]
       Code:
         S3Bucket: !Sub "solutions-${AWS::Region}"
-        S3Key: aws-landing-zone/v2.4.3/aws-landing-zone-state-machine.zip
+        S3Key: aws-landing-zone/v2.4.4/aws-landing-zone-state-machine.zip
       FunctionName: LandingZoneStateMachineLambda
       Description: AWS Landing Zone State Machine Handler
       Handler: state_machine_router.lambda_handler
@@ -2070,11 +2069,11 @@ Resources:
           log_level: !FindInMap [LambdaFunction, Logging, Level]
           wait_time: '15'
           SOLUTION_ID: !FindInMap [ Solution, Metrics, SolutionID ]
-          SOLUTION_VERSION: v2.4.3
+          SOLUTION_VERSION: v2.4.4
           METRICS_URL: !FindInMap [ Solution, Metrics, MetricsURL ]
       Code:
         S3Bucket: !Sub "solutions-${AWS::Region}"
-        S3Key: aws-landing-zone/v2.4.3/aws-landing-zone-handshake-state-machine.zip
+        S3Key: aws-landing-zone/v2.4.4/aws-landing-zone-handshake-state-machine.zip
       Description: AWS Lambda-backed Custom Resources for Handshake Mechanism
       FunctionName: LandingZoneHandshakeSMLambda
       Handler: handshake_sm_router.lambda_handler
@@ -2142,14 +2141,6 @@ Resources:
       Description: Contains the IAM Role ARNs to lock down the AWSCloudFormationStackSetExecutionRole Role in member account
       Type: String
       Value: !GetAtt BaselineResourceCodeBuildRole.Arn
-
-  LockDownRoleArnParameter6:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: /lock_down_role_arns_list/LaunchAVMCodeBuildRole
-      Description: Contains the IAM Role ARNs to lock down the AWSCloudFormationStackSetExecutionRole Role in member account
-      Type: String
-      Value: !GetAtt LaunchAVMCodeBuildRole.Arn
 
   LandingZoneLambdaRole:
     Type: AWS::IAM::Role
@@ -2285,11 +2276,11 @@ Resources:
           sm_arn_check_avm_exists: !Ref CheckAVMExistsStateMachine
           sm_arn_handshake_sm: !Ref HandshakeStateMachine
           SOLUTION_ID: !FindInMap [ Solution, Metrics, SolutionID ]
-          SOLUTION_VERSION: v2.4.3
+          SOLUTION_VERSION: v2.4.4
           METRICS_URL: !FindInMap [ Solution, Metrics, MetricsURL ]
       Code:
         S3Bucket: !Sub "solutions-${AWS::Region}"
-        S3Key: aws-landing-zone/v2.4.3/aws-landing-zone-avm-cr.zip
+        S3Key: aws-landing-zone/v2.4.4/aws-landing-zone-avm-cr.zip
       Description: AWS Lambda-backed Custom Resources for AVM
       FunctionName: LandingZone
       Handler: lambda_custom_resource.lambda_handler
@@ -5991,14 +5982,14 @@ Resources:
           AddonTemplate: !FindInMap [Solution, Data, "AddonTemplate"]
           AddonStack: !Sub ${AWS::StackId}
           AddonTopic: !If [IsAddonsManagedCondition, !Ref AddonSNSTopic, '']
-          ReleaseNotes: https://solutions-reference.s3.amazonaws.com/aws-landing-zone/v2.4.3/release_notes.html
+          ReleaseNotes: https://solutions-reference.s3.amazonaws.com/aws-landing-zone/v2.4.4/release_notes.html
           log_level: !FindInMap [LambdaFunction, Logging, Level]
           SOLUTION_ID: !FindInMap [ Solution, Metrics, SolutionID ]
-          SOLUTION_VERSION: v2.4.3
+          SOLUTION_VERSION: v2.4.4
           METRICS_URL: !FindInMap [ Solution, Metrics, MetricsURL ]
       Code:
         S3Bucket: !Sub "solutions-${AWS::Region}"
-        S3Key: aws-landing-zone/v2.4.3/aws-landing-zone-addon-publisher.zip
+        S3Key: aws-landing-zone/v2.4.4/aws-landing-zone-addon-publisher.zip
       FunctionName: LandingZoneAddonPublisher
       Handler: publish.lambda_handler
       Runtime: python3.7
@@ -6041,7 +6032,7 @@ Resources:
       Description: Install the centralized log aggregation and monitoring solution
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.4.3/add-on/aws-centralized-logging-solution.template
+            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.4.4/add-on/aws-centralized-logging-solution.template
           Name: v1.2
           Description: Updated Node.js runtime to 12.x
 
@@ -6070,7 +6061,7 @@ Resources:
       Description: This AWS Landing Zone add-on will deploy Directory Connector for AWS SSO peered with AWS Managed Active Directory and a Remote Desktop Gateway in the shared service account. Use this add-on to provide an AWS managed AD infrastructure for controlling user access to AWS and your EC2 instances.
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.4.3/add-on/aws-ad-with-rdgw-ad-connector.template
+            LoadTemplateFromURL: https://s3.amazonaws.com/solutions-reference/aws-landing-zone/v2.4.4/add-on/aws-ad-with-rdgw-ad-connector.template
           Name: v1.3
           Description: This version corrects an issue impacting pipeline execution during add-on installation.
 
@@ -6099,7 +6090,7 @@ Outputs:
     Value: !Ref LandingZonePipelineS3Bucket
   LandingZoneSolutionVersion:
     Description: Version Number
-    Value: "v2.4.3"
+    Value: "v2.4.4"
     Export:
       Name: AWS-Landing-Zone-Version
   LandingZoneAddonsVersion:
